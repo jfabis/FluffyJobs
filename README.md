@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # FluffyJobs 🐾
 
 **Nowoczesna platforma do wyszukiwania i publikowania ofert pracy z zaawansowanymi funkcjami płatności i autoryzacji.**
@@ -324,3 +325,36 @@ Write-Host "   1. Zastąpić 'your-*' rzeczywistymi kluczami API"
 Write-Host "   2. Dodać rzeczywisty link do demo (jeśli masz)"
 Write-Host "   3. Dostosować opis do swojego projektu"
 Write-Host "   4. Dodać screenshots jeśli chcesz"
+=======
+# FluffyJobs
+
+Professional job board platform built with React and Django REST Framework.
+
+## Features
+
+- User authentication with social media login
+- Job posting and browsing
+- Payment integration with Razorpay
+- Responsive design
+- Admin panel for offline payment approval
+
+## Tech Stack
+
+**Frontend:**
+- React 18
+- Material UI
+- React Router
+- Context API
+- Axios
+
+**Backend:**
+- Django 4.2
+- Django REST Framework
+- JWT Authentication
+- Razorpay Integration
+- Social Authentication
+
+## Setup Instructions
+
+### Backend Setup
+>>>>>>> 6ee6846d425834e7217b6796e754cf6d03d3cf82
