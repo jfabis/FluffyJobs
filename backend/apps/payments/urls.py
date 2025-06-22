@@ -2,7 +2,6 @@
 from . import views
 
 urlpatterns = [
-    path('create-order/', views.create_order, name='create-order'),
-    path('verify-payment/', views.verify_payment, name='verify-payment'),
-    path('offline-approval/', views.offline_payment_approval, name='offline-approval'),
+    path('create-test-payment-intent/', views.create_test_payment_intent, name='create_test_payment_intent'),
+    path('test-cards/', views.get_test_cards, name='get_test_cards'),
 ]

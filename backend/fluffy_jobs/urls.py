@@ -5,12 +5,14 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/auth/', include('apps.users.urls')),
-    path('api/jobs/', include('apps.jobs.urls')),
+    path('api/auth/', include('apps.authentication.urls')),
     path('api/payments/', include('apps.payments.urls')),
-    path('api/social-auth/', include('apps.social_auth.urls')),
+    # Tymczasowo wyłączone - dodaj gdy będziesz gotowy
+    path('api/jobs/', include('apps.jobs.urls')),
 ]
 
+# Serve media files in development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+

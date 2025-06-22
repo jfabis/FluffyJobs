@@ -1,0 +1,23 @@
+﻿# TESTOWE KARTY STRIPE - zapisz to jako referencję
+
+# ✅ POMYŚLNE PŁATNOŚCI:
+4242424242424242  # Visa
+5555555555554444  # Mastercard  
+378282246310005   # American Express
+6011111111111117  # Discover
+
+# ❌ ODRZUCONE PŁATNOŚCI:
+4000000000000002  # Karta odrzucona
+4000000000009995  # Niewystarczające środki
+4000000000009987  # Utracona karta
+4000000000009979  # Skradziona karta
+
+# 🔐 3D SECURE:
+4000000000003220  # Wymaga autoryzacji 3D Secure
+
+# 📝 DODATKOWE INFORMACJE:
+# - Data ważności: dowolna przyszła data (np. 12/25, 01/26)
+# - CVC: dowolny 3-cyfrowy kod (np. 123, 456)
+# - Kod pocztowy: dowolny (np. 12345)
+
+# ⚠️ WAŻNE: Te karty działają TYLKO w trybie testowym!
