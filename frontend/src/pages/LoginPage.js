@@ -1,63 +1,96 @@
 ﻿import React, { useState } from 'react';
-import {
-  Container,
-  Paper,
-  TextField,
-  Button,
-  Typography,
-  Box,
-} from '@mui/material';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
 const LoginPage = () => {
-  const [credentials, setCredentials] = useState({ username: '', password: '' });
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const [message, setMessage] = useState('');
+  const { login, isAuthenticated, loading } = useAuth();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    await login(credentials);
-    navigate('/');
+  console.log('📄 LoginPage rendered - isAuthenticated:', isAuthenticated, 'loading:', loading);
+
+  const handleTestLogin = () => {
+    const testUserData = {
+      access_token: 'test-token',
+      refresh_token: 'test-refresh',
+      user: {
+        id: 1,
+        email: 'test@example.com',
+        first_name: 'Test',
+        last_name: 'User'
+      }
+    };
+    
+    login(testUserData);
+    setMessage('Testowe logowanie pomyślne!');
   };
 
+  if (loading) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        fontSize: '18px'
+      }}>
+        🔄 Ładowanie...
+      </div>
+    );
+  }
+
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 8 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" align="center" gutterBottom>
-            Sign In to FluffyJobs
-          </Typography>
-          <form onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label="Username"
-              value={credentials.username}
-              onChange={(e) => setCredentials({...credentials, username: e.target.value})}
-              margin="normal"
-              required
-            />
-            <TextField
-              fullWidth
-              label="Password"
-              type="password"
-              value={credentials.password}
-              onChange={(e) => setCredentials({...credentials, password: e.target.value})}
-              margin="normal"
-              required
-            />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-            >
-              Sign In
-            </Button>
-          </form>
-        </Paper>
-      </Box>
-    </Container>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#f5f5f5',
+      padding: '20px'
+    }}>
+      <div style={{
+        backgroundColor: 'white',
+        padding: '40px',
+        borderRadius: '8px',
+        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        maxWidth: '400px',
+        width: '100%',
+        textAlign: 'center'
+      }}>
+        <h1>🐾 FluffyJobs</h1>
+        <h2>Strona logowania</h2>
+        
+        {message && (
+          <div style={{
+            backgroundColor: '#d4edda',
+            color: '#155724',
+            padding: '10px',
+            borderRadius: '4px',
+            marginBottom: '20px'
+          }}>
+            ✅ {message}
+          </div>
+        )}
+        
+        <div style={{ marginBottom: '20px' }}>
+          <p>Status: {isAuthenticated ? '✅ Zalogowany' : '❌ Niezalogowany'}</p>
+        </div>
+        
+        <button
+          onClick={handleTestLogin}
+          style={{
+            padding: '12px 24px',
+            backgroundColor: '#007bff',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            width: '100%'
+          }}
+        >
+          🧪 Testowe logowanie
+        </button>
+      </div>
+    </div>
   );
 };
 

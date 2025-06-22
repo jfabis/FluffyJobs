@@ -1,10 +1,10 @@
 ﻿import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider, useAuth } from './hooks/useAuth';
-import LoginPage from './pages/LoginPage';
-import Dashboard from './pages/Dashboard';
+import AuthPage from './pages/AuthPage';
+import HomePage from './pages/HomePage';
 
-// Komponent do ochrony tras - MUSI być wewnątrz AuthProvider
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   
@@ -22,10 +22,9 @@ const ProtectedRoute = ({ children }) => {
     );
   }
   
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return isAuthenticated ? children : <Navigate to="/auth" />;
 };
 
-// Komponent do przekierowania zalogowanych użytkowników - MUSI być wewnątrz AuthProvider
 const PublicRoute = ({ children }) => {
   const { isAuthenticated, loading } = useAuth();
   
@@ -43,45 +42,61 @@ const PublicRoute = ({ children }) => {
     );
   }
   
-  return !isAuthenticated ? children : <Navigate to="/dashboard" />;
+  return !isAuthenticated ? children : <Navigate to="/" />;
 };
 
-// Główny komponent z routingiem - WEWNĄTRZ AuthProvider
 const AppRoutes = () => {
   return (
     <Router>
-      <div className="App">
-        <Routes>
-          <Route 
-            path="/login" 
-            element={
-              <PublicRoute>
-                <LoginPage />
-              </PublicRoute>
-            } 
-          />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      </div>
+      <Routes>
+        <Route 
+          path="/auth" 
+          element={
+            <PublicRoute>
+              <AuthPage />
+            </PublicRoute>
+          } 
+        />
+        <Route 
+          path="/" 
+          element={
+            <ProtectedRoute>
+              <HomePage />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="*" element={<Navigate to="/auth" />} />
+      </Routes>
     </Router>
   );
 };
 
-// Główny App - AuthProvider na zewnątrz
 function App() {
+  const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
+  
+  if (!googleClientId) {
+    return (
+      <div style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100vh',
+        flexDirection: 'column',
+        color: '#e53e3e'
+      }}>
+        <h2>⚠️ Konfiguracja Error</h2>
+        <p>Google Client ID nie jest skonfigurowany.</p>
+        <p>Dodaj REACT_APP_GOOGLE_CLIENT_ID do pliku .env</p>
+      </div>
+    );
+  }
+
   return (
-    <AuthProvider>
-      <AppRoutes />
-    </AuthProvider>
+    <GoogleOAuthProvider clientId={googleClientId}>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </GoogleOAuthProvider>
   );
 }
 

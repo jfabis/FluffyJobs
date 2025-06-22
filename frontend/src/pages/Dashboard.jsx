@@ -8,204 +8,262 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    navigate('/auth');
   };
 
   return (
     <div style={{
       minHeight: '100vh',
-      backgroundColor: '#f5f5f5',
-      padding: '20px'
+      backgroundColor: '#f8fafc'
     }}>
-      <div style={{
-        maxWidth: '800px',
-        margin: '0 auto',
+      {/* Header */}
+      <header style={{
         backgroundColor: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-        overflow: 'hidden'
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+        padding: '16px 24px',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
       }}>
-        {/* Header */}
         <div style={{
-          backgroundColor: '#4285f4',
-          color: 'white',
-          padding: '20px',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center'
+          alignItems: 'center',
+          gap: '12px'
         }}>
-          <h1 style={{ margin: 0, fontSize: '24px' }}>
-            🐾 FluffyJobs Dashboard
+          <h1 style={{
+            fontSize: '24px',
+            fontWeight: 'bold',
+            color: '#1a202c',
+            margin: 0
+          }}>
+            🐾 FluffyJobs
           </h1>
+          <span style={{
+            backgroundColor: '#e6fffa',
+            color: '#00695c',
+            padding: '4px 8px',
+            borderRadius: '12px',
+            fontSize: '12px',
+            fontWeight: '600'
+          }}>
+            Dashboard
+          </span>
+        </div>
+        
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px'
+        }}>
+          {user?.picture && (
+            <img
+              src={user.picture}
+              alt="Profile"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: '2px solid #e2e8f0'
+              }}
+            />
+          )}
+          <span style={{ color: '#4a5568', fontSize: '14px' }}>
+            {user?.first_name || user?.email}
+          </span>
           <button
             onClick={handleLogout}
             style={{
-              backgroundColor: 'rgba(255,255,255,0.2)',
+              backgroundColor: '#f56565',
               color: 'white',
               border: 'none',
               padding: '8px 16px',
-              borderRadius: '4px',
+              borderRadius: '6px',
               cursor: 'pointer',
-              fontSize: '14px'
+              fontSize: '14px',
+              fontWeight: '500'
             }}
           >
-            Wyloguj się
+            Wyloguj
           </button>
         </div>
+      </header>
 
-        {/* User Info */}
-        <div style={{ padding: '30px' }}>
+      {/* Main Content */}
+      <main style={{ padding: '24px' }}>
+        <div style={{
+          maxWidth: '1200px',
+          margin: '0 auto'
+        }}>
+          {/* Welcome Section */}
           <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            marginBottom: '30px',
-            padding: '20px',
-            backgroundColor: '#f8f9fa',
-            borderRadius: '8px'
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            marginBottom: '24px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}>
-            {user?.picture && (
-              <img
-                src={user.picture}
-                alt="Profile"
-                style={{
-                  width: '60px',
-                  height: '60px',
-                  borderRadius: '50%',
-                  marginRight: '20px',
-                  border: '3px solid #4285f4'
-                }}
-              />
-            )}
-            <div>
-              <h2 style={{ 
-                margin: '0 0 5px 0',
-                color: '#333',
-                fontSize: '20px'
-              }}>
-                Witaj, {user?.first_name || user?.name || 'Użytkowniku'}! 👋
-              </h2>
-              <p style={{ 
-                margin: 0,
-                color: '#666',
-                fontSize: '14px'
-              }}>
-                📧 {user?.email}
-              </p>
-            </div>
+            <h2 style={{
+              fontSize: '20px',
+              fontWeight: '600',
+              color: '#1a202c',
+              marginBottom: '8px'
+            }}>
+              Witaj, {user?.first_name || 'Użytkowniku'}! 👋
+            </h2>
+            <p style={{
+              color: '#718096',
+              margin: 0
+            }}>
+              Gotowy na znalezienie wymarzonej pracy?
+            </p>
           </div>
 
-          {/* User Details */}
+          {/* Stats Cards */}
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
             gap: '20px',
-            marginBottom: '30px'
+            marginBottom: '24px'
           }}>
             <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
               padding: '20px',
-              border: '1px solid #e0e0e0',
-              borderRadius: '8px'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              borderLeft: '4px solid #4299e1'
             }}>
-              <h3 style={{ 
-                margin: '0 0 10px 0',
-                color: '#4285f4',
-                fontSize: '16px'
-              }}>
-                👤 Informacje osobiste
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>💼</div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#1a202c' }}>
+                Dostępne oferty
               </h3>
-              <p><strong>Imię:</strong> {user?.first_name || 'Nie podano'}</p>
-              <p><strong>Nazwisko:</strong> {user?.last_name || 'Nie podano'}</p>
-              <p><strong>Email:</strong> {user?.email}</p>
+              <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#4299e1' }}>
+                1,247
+              </p>
             </div>
 
             <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
               padding: '20px',
-              border: '1px solid #e0e0e0',
-              borderRadius: '8px'
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              borderLeft: '4px solid #48bb78'
             }}>
-              <h3 style={{ 
-                margin: '0 0 10px 0',
-                color: '#34a853',
-                fontSize: '16px'
-              }}>
-                🔐 Status konta
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>📝</div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#1a202c' }}>
+                Twoje aplikacje
               </h3>
-              <p><strong>ID użytkownika:</strong> {user?.id}</p>
-              <p><strong>Typ logowania:</strong> Google OAuth</p>
-              <p><strong>Status:</strong> ✅ Aktywny</p>
+              <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#48bb78' }}>
+                0
+              </p>
+            </div>
+
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '20px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              borderLeft: '4px solid #ed8936'
+            }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>⭐</div>
+              <h3 style={{ margin: '0 0 4px 0', fontSize: '16px', color: '#1a202c' }}>
+                Ulubione
+              </h3>
+              <p style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#ed8936' }}>
+                0
+              </p>
             </div>
           </div>
 
           {/* Quick Actions */}
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '15px'
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}>
-            <button style={{
-              padding: '15px',
-              backgroundColor: '#4285f4',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500'
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: '600',
+              color: '#1a202c',
+              marginBottom: '16px'
             }}>
-              💼 Przeglądaj oferty pracy
-            </button>
+              Szybkie akcje
+            </h3>
             
-            <button style={{
-              padding: '15px',
-              backgroundColor: '#34a853',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500'
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gap: '16px'
             }}>
-              ➕ Dodaj ofertę pracy
-            </button>
-            
-            <button style={{
-              padding: '15px',
-              backgroundColor: '#fbbc05',
-              color: '#333',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500'
-            }}>
-              💳 Testuj płatności
-            </button>
+              <button style={{
+                padding: '16px',
+                backgroundColor: '#4299e1',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                textAlign: 'left'
+              }}>
+                🔍 Szukaj ofert pracy
+              </button>
+              
+              <button style={{
+                padding: '16px',
+                backgroundColor: '#48bb78',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                textAlign: 'left'
+              }}>
+                📄 Zaktualizuj CV
+              </button>
+              
+              <button style={{
+                padding: '16px',
+                backgroundColor: '#ed8936',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500',
+                textAlign: 'left'
+              }}>
+                🔔 Ustawienia powiadomień
+              </button>
+            </div>
           </div>
 
-          {/* Debug Info */}
-          <details style={{ marginTop: '30px' }}>
-            <summary style={{ 
+          {/* User Info Debug */}
+          <details style={{ marginTop: '24px' }}>
+            <summary style={{
               cursor: 'pointer',
-              padding: '10px',
-              backgroundColor: '#f0f0f0',
-              borderRadius: '4px',
-              marginBottom: '10px'
+              padding: '12px',
+              backgroundColor: '#f7fafc',
+              borderRadius: '8px',
+              border: '1px solid #e2e8f0'
             }}>
               🔧 Informacje debugowania (kliknij aby rozwinąć)
             </summary>
             <pre style={{
-              backgroundColor: '#f8f8f8',
-              padding: '15px',
-              borderRadius: '4px',
+              backgroundColor: '#1a202c',
+              color: '#e2e8f0',
+              padding: '16px',
+              borderRadius: '8px',
               fontSize: '12px',
               overflow: 'auto',
-              border: '1px solid #e0e0e0'
+              marginTop: '8px'
             }}>
               {JSON.stringify(user, null, 2)}
             </pre>
           </details>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
