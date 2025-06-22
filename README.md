@@ -290,7 +290,7 @@ Ten projekt jest licencjonowany na licencji MIT - zobacz plik [LICENSE](LICENSE)
 
 ## 👨‍💻 Autor
 
-**Jakub Fabisiak** - [jfabis](https://github.com/jfabis)
+**Jan Fabisiak** - [jfabis](https://github.com/jfabis)
 
 ## 🙏 Podziękowania
 
@@ -302,58 +302,3 @@ Ten projekt jest licencjonowany na licencji MIT - zobacz plik [LICENSE](LICENSE)
 ---
 
 ⚠️ **Uwaga**: Ta aplikacja używa tylko testowych płatności. Żadne prawdziwe transakcje finansowe nie są przetwarzane.
-
-🔗 **Demo**: [Link do demo aplikacji](https://your-demo-link.com) (jeśli dostępne)
-"@ | Out-File -FilePath "README.md" -Encoding UTF8
-
-Write-Host "✅ Profesjonalne README.md zostało utworzone!"
-Write-Host ""
-Write-Host "📋 Plik zawiera:"
-Write-Host "   - Opis projektu z badges"
-Write-Host "   - Szczegółowe instrukcje instalacji"
-Write-Host "   - Konfigurację zmiennych środowiskowych"
-Write-Host "   - Przewodnik uzyskiwania kluczy API"
-Write-Host "   - Instrukcje uruchomienia"
-Write-Host "   - Testowe karty Stripe"
-Write-Host "   - Strukturę projektu"
-Write-Host "   - Rozwiązywanie problemów"
-Write-Host "   - Informacje o technologiach"
-Write-Host ""
-Write-Host "🎯 Pamiętaj aby:"
-Write-Host "   1. Zastąpić 'your-*' rzeczywistymi kluczami API"
-Write-Host "   2. Dodać rzeczywisty link do demo (jeśli masz)"
-Write-Host "   3. Dostosować opis do swojego projektu"
-Write-Host "   4. Dodać screenshots jeśli chcesz"
-=======
-# FluffyJobs
-
-Professional job board platform built with React and Django REST Framework.
-
-## Features
-
-- User authentication with social media login
-- Job posting and browsing
-- Payment integration with Razorpay
-- Responsive design
-- Admin panel for offline payment approval
-
-## Tech Stack
-
-**Frontend:**
-- React 18
-- Material UI
-- React Router
-- Context API
-- Axios
-
-**Backend:**
-- Django 4.2
-- Django REST Framework
-- JWT Authentication
-- Razorpay Integration
-- Social Authentication
-
-## Setup Instructions
-
-### Backend Setup
->>>>>>> 6ee6846d425834e7217b6796e754cf6d03d3cf82
