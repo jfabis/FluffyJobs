@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # FluffyJobs 🐾
 
 **Nowoczesna platforma do wyszukiwania i publikowania ofert pracy z zaawansowanymi funkcjami płatności i autoryzacji.**
