@@ -32,55 +32,74 @@ Przed rozpoczęciem upewnij się, że masz zainstalowane:
 
 ### 1. Sklonuj repozytorium
 
+```bash
 git clone https://github.com/jfabis/FluffyJobs.git
 cd FluffyJobs
-
+```
 
 ### 2. Konfiguracja Backend (Django)
 
 Utwórz środowisko wirtualne
 
+```bash
 python -m venv venv
+```
 
 Aktywuj środowisko wirtualne Windows PowerShell:
 
+```bash
 .\venv\Scripts\Activate.ps1
+```
 
 Windows CMD:
 
+```bash
 venv\Scripts\activate.bat
+```
 
 macOS/Linux:
 
+```bash
 source venv/bin/activate
+```
 
 Przejdź do katalogu backend
 
+```bash
 cd backend
+```
 
 Zainstaluj zależności
 
+```bash
 pip install -r requirements.txt
+```
 
 Utwórz plik .env
 
+```bash
 copy .env.example .env
-
+```
 
 ### 3. Konfiguracja Frontend (React)
 
 Przejdź do katalogu frontend
 
+```bash
 cd ../frontend
+```
 
 Zainstaluj zależności npm
 
+```bash
 npm install
+```
 
 Utwórz plik .env
 
+```bash
 copy .env.example .env
-
+```
 
 ## ⚙️ Konfiguracja zmiennych środowiskowych
 
@@ -88,44 +107,39 @@ copy .env.example .env
 
 Utwórz plik `backend/.env` z następującymi zmiennymi:
 
-Django
-
+```bash
+# Django
 SECRET_KEY=your-super-secret-django-key-here
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
-Database
-
+# Database
 DATABASE_URL=sqlite:///db.sqlite3
 
-Google OAuth
-
+# Google OAuth
 GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-your-google-client-secret
 
-Stripe (TYLKO TESTOWE KLUCZE!)
-
+# Stripe (TYLKO TESTOWE KLUCZE!)
 STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key
 STRIPE_SECRET_KEY=sk_test_your-stripe-secret-key
 STRIPE_TEST_MODE=True
-
+```
 
 ### Frontend (.env)
 
 Utwórz plik `frontend/.env` z następującymi zmiennymi:
 
-Google OAuth
-
+```bash
+# Google OAuth
 REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 
-Stripe (TYLKO TESTOWE KLUCZE!)
-
+# Stripe (TYLKO TESTOWE KLUCZE!)
 REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_your-stripe-publishable-key
 
-API URL
-
+# API URL
 REACT_APP_API_URL=http://localhost:8000/api
-
+```
 
 ## 🔑 Uzyskiwanie kluczy API
 
@@ -155,21 +169,28 @@ REACT_APP_API_URL=http://localhost:8000/api
 
 Upewnij się, że środowisko wirtualne jest aktywne
 
+```bash
 cd backend
+```
 
 Wykonaj migracje bazy danych
 
+```bash
 python manage.py makemigrations
 python manage.py migrate
+```
 
 Utwórz superużytkownika (opcjonalnie)
 
+```bash
 python manage.py createsuperuser
+```
 
 Uruchom serwer Django
 
+```bash
 python manage.py runserver
-
+```
 
 Backend będzie dostępny pod adresem: `http://localhost:8000`
 
@@ -177,12 +198,15 @@ Backend będzie dostępny pod adresem: `http://localhost:8000`
 
 W nowym terminalu przejdź do katalogu frontend
 
+```bash
 cd frontend
+```
 
 Uruchom serwer React
 
+```bash
 npm start
-
+```
 
 Frontend będzie dostępny pod adresem: `http://localhost:3000`
 
@@ -204,38 +228,39 @@ Aplikacja używa **tylko testowych płatności Stripe**. Użyj następujących t
 
 ## 📁 Struktura projektu
 
+```
 FluffyJobs/
-├── backend/ # Django backend
-│ ├── authentication/ # Moduł autoryzacji Google OAuth
-│ ├── payments/ # Moduł płatności Stripe
-│ ├── jobs/ # Moduł ofert pracy
-│ ├── users/ # Moduł użytkowników
-│ └── manage.py
-├── frontend/ # React frontend
-│ ├── src/
-│ │ ├── components/ # Komponenty React
-│ │ ├── services/ # Serwisy API
-│ │ └── pages/ # Strony aplikacji
-│ └── package.json
-├── venv/ # Środowisko wirtualne Python
+├── backend/                # Django backend
+│   ├── authentication/     # Moduł autoryzacji Google OAuth
+│   ├── payments/           # Moduł płatności Stripe
+│   ├── jobs/               # Moduł ofert pracy
+│   ├── users/              # Moduł użytkowników
+│   └── manage.py
+├── frontend/               # React frontend
+│   ├── src/
+│   │   ├── components/     # Komponenty React
+│   │   ├── services/       # Serwisy API
+│   │   └── pages/          # Strony aplikacji
+│   └── package.json
+├── venv/                   # Środowisko wirtualne Python
 └── README.md
-
+```
 
 ## 🧪 Testowanie
 
 ### Backend
 
+```bash
 cd backend
-
 python manage.py test
-
+```
 
 ### Frontend
 
+```bash
 cd frontend
-
 npm test
-
+```
 
 ## 🐛 Rozwiązywanie problemów
 
@@ -243,19 +268,23 @@ npm test
 
 Zmień politykę wykonywania PowerShell
 
+```bash
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
 
 Następnie aktywuj środowisko
 
+```bash
 .\venv\Scripts\Activate.ps1
-
+```
 
 ### Błąd "Module not found"
 
 Upewnij się, że środowisko wirtualne jest aktywne
 
+```bash
 pip install -r requirements.txt
-
+```
 
 ### Problemy z CORS
 
@@ -279,9 +308,18 @@ Sprawdź czy w `settings.py` masz poprawnie skonfigurowane `CORS_ALLOWED_ORIGINS
 ## 🤝 Współpraca
 
 1. **Fork** repozytorium
-2. Utwórz branch dla nowej funkcjonalności (`git checkout -b feature/AmazingFeature`)
-3. **Commit** zmiany (`git commit -m 'Add some AmazingFeature'`)
-4. **Push** do brancha (`git push origin feature/AmazingFeature`)
+2. Utwórz branch dla nowej funkcjonalności 
+   ```bash
+   git checkout -b feature/AmazingFeature
+   ```
+3. **Commit** zmiany 
+   ```bash
+   git commit -m 'Add some AmazingFeature'
+   ```
+4. **Push** do brancha 
+   ```bash
+   git push origin feature/AmazingFeature
+   ```
 5. Otwórz **Pull Request**
 
 ## 📄 Licencja
