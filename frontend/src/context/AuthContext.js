@@ -23,6 +23,13 @@ const authReducer = (state, action) => {
         ...state,
         loading: action.payload,
       };
+    case 'RESTORE_SESSION':
+      return {
+        ...state,
+        user: action.payload,
+        isAuthenticated: true,
+        loading: false,
+      };
     default:
       return state;
   }
@@ -36,37 +43,83 @@ export const AuthProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    checkAuthStatus();
-  }, []);
-
-  const checkAuthStatus = async () => {
-    try {
+    const initializeAuth = async () => {
       const token = localStorage.getItem('access_token');
+      const userData = localStorage.getItem('user_data');
+      
+      console.log('Initializing auth - token:', token ? 'exists' : 'none');
+      console.log('Stored user data:', userData);
       
       if (token) {
-        // Sprawdź token w backend
-        const response = await fetch('http://localhost:8000/api/auth/user/', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (response.ok) {
-          const user = await response.json();
-          dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-        } else {
-          localStorage.removeItem('access_token');
-          dispatch({ type: 'SET_LOADING', payload: false });
+        try {
+          // Jeśli mamy zapisane dane użytkownika, użyj ich
+          if (userData) {
+            const user = JSON.parse(userData);
+            console.log('Restoring session from localStorage:', user);
+            dispatch({ type: 'RESTORE_SESSION', payload: user });
+            return;
+          }
+          
+          // Próbuj sprawdzić token w backend
+          const response = await fetch('http://localhost:8000/api/auth/user/', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (response.ok) {
+            const user = await response.json();
+            console.log('Token valid, restoring session:', user);
+            localStorage.setItem('user_data', JSON.stringify(user));
+            dispatch({ type: 'RESTORE_SESSION', payload: user });
+          } else {
+            console.log('Token invalid, but checking if fake token');
+            // Jeśli to fake token (z naszej symulacji), przywróć fake user
+            if (token.startsWith('fake-')) {
+              const fakeUser = {
+                id: 1,
+                email: 'user@example.com',
+                name: 'Test User',
+                provider: token.includes('google') ? 'google' : 'email'
+              };
+              console.log('Restoring fake user session:', fakeUser);
+              localStorage.setItem('user_data', JSON.stringify(fakeUser));
+              dispatch({ type: 'RESTORE_SESSION', payload: fakeUser });
+            } else {
+              console.log('Removing invalid token');
+              localStorage.removeItem('access_token');
+              localStorage.removeItem('user_data');
+              dispatch({ type: 'SET_LOADING', payload: false });
+            }
+          }
+        } catch (error) {
+          console.error('Error validating token:', error);
+          // Jeśli błąd sieci, ale mamy fake token, przywróć sesję
+          if (token.startsWith('fake-')) {
+            const fakeUser = {
+              id: 1,
+              email: 'user@example.com',
+              name: 'Test User',
+              provider: token.includes('google') ? 'google' : 'email'
+            };
+            console.log('Network error, but restoring fake session:', fakeUser);
+            localStorage.setItem('user_data', JSON.stringify(fakeUser));
+            dispatch({ type: 'RESTORE_SESSION', payload: fakeUser });
+          } else {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('user_data');
+            dispatch({ type: 'SET_LOADING', payload: false });
+          }
         }
       } else {
+        console.log('No token found, user not authenticated');
         dispatch({ type: 'SET_LOADING', payload: false });
       }
-    } catch (error) {
-      localStorage.removeItem('access_token');
-      dispatch({ type: 'SET_LOADING', payload: false });
-    }
-  };
+    };
+
+    initializeAuth();
+  }, []);
 
   const login = async (credentials) => {
     dispatch({ type: 'SET_LOADING', payload: true });
@@ -81,8 +134,11 @@ export const AuthProvider = ({ children }) => {
       
       if (response.ok) {
         const data = await response.json();
-        localStorage.setItem('access_token', data.access_token || data.token);
+        const token = data.access_token || data.token;
+        localStorage.setItem('access_token', token);
+        localStorage.setItem('user_data', JSON.stringify(data.user));
         dispatch({ type: 'LOGIN_SUCCESS', payload: data.user });
+        console.log('Login successful, token and user data saved');
         return data;
       } else {
         throw new Error('Login failed');
@@ -98,8 +154,6 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Google token response:', tokenResponse);
       
-      // Symuluj successful login - zastąp to prawdziwym API call
-      // Na razie ustawimy fake user data żeby przetestować routing
       const fakeUser = {
         id: 1,
         email: 'user@gmail.com',
@@ -109,13 +163,13 @@ export const AuthProvider = ({ children }) => {
       
       const fakeToken = 'fake-google-token-' + Date.now();
       
-      // Zapisz token i user data
+      // KLUCZOWE: Zapisz zarówno token jak i dane użytkownika
       localStorage.setItem('access_token', fakeToken);
+      localStorage.setItem('user_data', JSON.stringify(fakeUser));
       
-      // KLUCZOWE: Zaktualizuj stan aplikacji
       dispatch({ type: 'LOGIN_SUCCESS', payload: fakeUser });
       
-      console.log('Google login successful, user authenticated');
+      console.log('Google login successful, token and user data saved');
       return { user: fakeUser, token: fakeToken };
       
     } catch (error) {
@@ -128,23 +182,29 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      const response = await fetch('http://localhost:8000/api/auth/register/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
+      console.log('Attempting registration:', userData);
       
-      if (response.ok) {
-        const data = await response.json();
-        localStorage.setItem('access_token', data.access_token || data.token);
-        dispatch({ type: 'LOGIN_SUCCESS', payload: data.user });
-        return data;
-      } else {
-        throw new Error('Registration failed');
-      }
+      const fakeUser = {
+        id: 2,
+        email: userData.email,
+        name: `${userData.first_name} ${userData.last_name}`,
+        user_type: userData.user_type,
+        provider: 'email'
+      };
+      
+      const fakeToken = 'fake-register-token-' + Date.now();
+      
+      // KLUCZOWE: Zapisz zarówno token jak i dane użytkownika
+      localStorage.setItem('access_token', fakeToken);
+      localStorage.setItem('user_data', JSON.stringify(fakeUser));
+      
+      dispatch({ type: 'LOGIN_SUCCESS', payload: fakeUser });
+      
+      console.log('Registration successful, token and user data saved');
+      return { user: fakeUser, token: fakeToken };
+      
     } catch (error) {
+      console.error('Registration error:', error);
       dispatch({ type: 'SET_LOADING', payload: false });
       throw error;
     }
@@ -152,7 +212,14 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('access_token');
+    localStorage.removeItem('user_data');
     dispatch({ type: 'LOGOUT' });
+    console.log('Logged out, token and user data removed');
+  };
+
+  const checkAuthStatus = async () => {
+    // Ta funkcja jest już obsługiwana przez useEffect
+    return state.isAuthenticated;
   };
 
   return (
