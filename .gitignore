@@ -3,3 +3,5 @@
 .env.local
 .env.production
 *credentials*.txt
+backend/.env
+frontend/.env
