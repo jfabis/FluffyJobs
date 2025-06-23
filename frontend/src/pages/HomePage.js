@@ -1,524 +1,575 @@
-﻿import React, { useState } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import {
-  Box,
-  Typography,
-  Button,
   Container,
+  Typography,
+  Box,
   Grid,
   Card,
   CardContent,
+  CardMedia,
+  CardActions,
+  CardHeader,
+  Button,
   Avatar,
   Chip,
   Paper,
-  TextField,
-  InputAdornment,
+  IconButton,
+  Fade,
+  Grow,
+  Slide,
   Stack,
   Divider,
-  IconButton,
+  Rating,
+  LinearProgress,
+  Skeleton,
 } from '@mui/material';
 import {
-  Search as SearchIcon,
-  LocationOn,
+  Work,
   Business,
+  LocationOn,
   TrendingUp,
   People,
-  Work,
-  Code,
-  Brush,
-  Analytics,
-  ArrowForward,
-  Verified,
+  Star,
   BookmarkBorder,
-  AccessTime,
+  Bookmark,
+  ArrowForward,
+  Schedule,
   AttachMoney,
+  Verified,
+  Launch,
+  Favorite,
+  Share,
+  ExpandMore,
+  PlayArrow,
 } from '@mui/icons-material';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useJobs } from '../context/JobContext';
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [location, setLocation] = useState('');
+  const { jobs, companies, loading, saveJob, unsaveJob, isJobSaved } = useJobs();
+  const [animationTrigger, setAnimationTrigger] = useState(false);
 
-  const handleSearch = () => {
-    navigate(`/jobs?search=${searchQuery}&location=${location}`);
+  useEffect(() => {
+    setAnimationTrigger(true);
+  }, []);
+
+  // Wybierz 3 najnowsze oferty pracy (Featured Jobs)
+  const featuredJobs = jobs.slice(0, 3);
+  
+  // Wybierz 4 największe firmy (Top Companies)
+  const topCompanies = companies.slice(0, 4);
+
+  const handleSaveJob = (jobId, event) => {
+    event.stopPropagation();
+    if (isJobSaved(jobId)) {
+      unsaveJob(jobId);
+    } else {
+      saveJob(jobId);
+    }
   };
 
-  const featuredJobs = [
-    {
-      id: 1,
-      title: 'Senior React Developer',
-      company: 'TechCorp Inc.',
-      location: 'San Francisco, CA',
-      salary: '$120k - $150k',
-      type: 'Full-time',
-      icon: <Code />,
-      posted: '2 days ago',
-      applicants: 45,
-      verified: true,
-      featured: true,
-      companyLogo: 'TC',
-      companyColor: '#1976d2',
-    },
-    {
-      id: 2,
-      title: 'UX Designer',
-      company: 'Design Studio',
-      location: 'New York, NY',
-      salary: '$90k - $110k',
-      type: 'Full-time',
-      icon: <Brush />,
-      posted: '1 day ago',
-      applicants: 32,
-      verified: true,
-      featured: true,
-      companyLogo: 'DS',
-      companyColor: '#9c27b0',
-    },
-    {
-      id: 3,
-      title: 'Data Scientist',
-      company: 'DataFlow',
-      location: 'Remote',
-      salary: '$130k - $160k',
-      type: 'Full-time',
-      icon: <Analytics />,
-      posted: '3 days ago',
-      applicants: 67,
-      verified: true,
-      featured: true,
-      companyLogo: 'DF',
-      companyColor: '#f57c00',
-    },
-  ];
+  const getCompanyInitials = (name) => {
+    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
+  };
 
-  const topCompanies = [
-    { name: 'Google', jobs: 234, logo: 'G', color: '#4285f4', employees: '100k+' },
-    { name: 'Microsoft', jobs: 189, logo: 'M', color: '#00a1f1', employees: '200k+' },
-    { name: 'Apple', jobs: 156, logo: 'A', color: '#000000', employees: '150k+' },
-    { name: 'Amazon', jobs: 298, logo: 'A', color: '#ff9900', employees: '1.5M+' },
-  ];
+  const getJobTypeColor = (type) => {
+    switch (type) {
+      case 'Full-time': return 'primary';
+      case 'Part-time': return 'secondary';
+      case 'Contract': return 'warning';
+      default: return 'default';
+    }
+  };
 
-  const stats = [
-    { icon: <Work />, value: '10,000+', label: 'Active Jobs', color: '#1976d2' },
-    { icon: <People />, value: '50,000+', label: 'Job Seekers', color: '#388e3c' },
-    { icon: <Business />, value: '2,500+', label: 'Companies', color: '#f57c00' },
-    { icon: <TrendingUp />, value: '95%', label: 'Success Rate', color: '#d32f2f' },
-  ];
-
-  return (
-    <Box sx={{ minHeight: '100vh', bgcolor: '#fafafa' }}>
-      {/* Hero Section */}
-      <Box
-        sx={{
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-          color: 'white',
-          pt: 8,
-          pb: 12,
-          position: 'relative',
-          overflow: 'hidden',
-        }}
-      >
-        <Container maxWidth="lg">
-          <Box sx={{ textAlign: 'center', mb: 6 }}>
-            <Typography 
-              variant="h1" 
-              sx={{ 
-                fontWeight: 700,
-                fontSize: { xs: '2.5rem', md: '4rem' },
-                mb: 2,
-                lineHeight: 1.2,
-              }}
-            >
-              Find Your Dream Job
-            </Typography>
-            <Typography 
-              variant="h5" 
-              sx={{ 
-                opacity: 0.9,
-                mb: 4,
-                maxWidth: 600,
-                mx: 'auto',
-                fontWeight: 400,
-              }}
-            >
-              Connect with top companies and discover opportunities that match your skills
-            </Typography>
-          </Box>
-
-          {/* Search Section */}
-          <Paper
-            elevation={8}
-            sx={{
-              p: 2,
-              borderRadius: 4,
-              maxWidth: 800,
-              mx: 'auto',
-              background: 'rgba(255, 255, 255, 0.95)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <Grid container spacing={2} alignItems="center">
-              <Grid item xs={12} md={5}>
-                <TextField
-                  fullWidth
-                  placeholder="Job title, keywords, or company"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon color="action" />
-                      </InputAdornment>
-                    ),
-                    sx: { borderRadius: 2 }
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <TextField
-                  fullWidth
-                  placeholder="Location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LocationOn color="action" />
-                      </InputAdornment>
-                    ),
-                    sx: { borderRadius: 2 }
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} md={3}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  size="large"
-                  onClick={handleSearch}
-                  sx={{
-                    py: 1.8,
-                    borderRadius: 2,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    fontSize: '1rem',
-                  }}
-                >
-                  Search Jobs
-                </Button>
-              </Grid>
-            </Grid>
-          </Paper>
-        </Container>
-      </Box>
-
-      <Container maxWidth="lg" sx={{ py: 8 }}>
-        {/* Stats Section */}
-        <Grid container spacing={4} sx={{ mb: 10 }}>
-          {stats.map((stat, index) => (
-            <Grid item xs={6} md={3} key={index}>
-              <Paper
-                elevation={2}
-                sx={{
-                  p: 4,
-                  textAlign: 'center',
-                  borderRadius: 3,
-                  height: '100%',
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: 6,
-                  },
-                }}
-              >
-                <Box
-                  sx={{
-                    width: 64,
-                    height: 64,
-                    borderRadius: '50%',
-                    bgcolor: stat.color,
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    mx: 'auto',
-                    mb: 2,
-                  }}
-                >
-                  {React.cloneElement(stat.icon, { fontSize: 'large' })}
-                </Box>
-                <Typography variant="h3" sx={{ fontWeight: 700, color: stat.color, mb: 1 }}>
-                  {stat.value}
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
-                  {stat.label}
-                </Typography>
-              </Paper>
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ py: 6 }}>
+        <Grid container spacing={3}>
+          {[...Array(6)].map((_, index) => (
+            <Grid item xs={12} md={4} key={index}>
+              <Card>
+                <Skeleton variant="rectangular" width="100%" height={140} />
+                <CardContent>
+                  <Skeleton variant="text" sx={{ fontSize: '1.5rem' }} />
+                  <Skeleton variant="text" sx={{ fontSize: '1rem' }} />
+                  <Skeleton variant="text" sx={{ fontSize: '0.875rem' }} />
+                </CardContent>
+              </Card>
             </Grid>
           ))}
         </Grid>
+      </Container>
+    );
+  }
 
-        {/* Featured Jobs */}
-        <Box sx={{ mb: 10 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6 }}>
-            <Box>
-              <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                Featured Jobs
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem' }}>
-                Hand-picked opportunities from top companies
-              </Typography>
-            </Box>
-            <Button
-              component={Link}
-              to="/jobs"
-              endIcon={<ArrowForward />}
-              variant="outlined"
-              size="large"
-              sx={{ textTransform: 'none', fontWeight: 600 }}
-            >
-              View All Jobs
-            </Button>
-          </Box>
-
-          <Grid container spacing={4}>
-            {featuredJobs.map((job) => (
-              <Grid item xs={12} md={4} key={job.id}>
-                <Paper
-                  elevation={3}
-                  sx={{
-                    borderRadius: 3,
-                    overflow: 'hidden',
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      transform: 'translateY(-8px)',
-                      boxShadow: 8,
-                    },
-                    position: 'relative',
-                  }}
-                  component={Link}
-                  to={`/jobs/${job.id}`}
-                  style={{ textDecoration: 'none' }}
-                >
-                  {job.featured && (
-                    <Chip
-                      label="Featured"
-                      size="small"
-                      sx={{
-                        position: 'absolute',
-                        top: 16,
-                        right: 16,
-                        bgcolor: '#ff4081',
-                        color: 'white',
-                        fontWeight: 600,
-                        zIndex: 1,
-                      }}
-                    />
-                  )}
-
-                  <CardContent sx={{ p: 4 }}>
-                    <Stack spacing={3}>
-                      {/* Company Header */}
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <Avatar
-                          sx={{
-                            width: 56,
-                            height: 56,
-                            bgcolor: job.companyColor,
-                            fontSize: '1.2rem',
-                            fontWeight: 700,
-                          }}
-                        >
-                          {job.companyLogo}
-                        </Avatar>
-                        <Box sx={{ flex: 1 }}>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                              {job.company}
-                            </Typography>
-                            {job.verified && (
-                              <Verified sx={{ fontSize: 18, color: 'primary.main' }} />
-                            )}
-                          </Box>
-                          <Typography variant="body2" color="text.secondary">
-                            {job.type}
-                          </Typography>
-                        </Box>
-                        <IconButton size="small">
-                          <BookmarkBorder />
-                        </IconButton>
-                      </Box>
-
-                      {/* Job Title */}
-                      <Typography variant="h5" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-                        {job.title}
-                      </Typography>
-
-                      {/* Location & Salary */}
-                      <Stack spacing={2}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <LocationOn sx={{ fontSize: 18, color: 'text.secondary' }} />
-                          <Typography variant="body2" color="text.secondary">
-                            {job.location}
-                          </Typography>
-                        </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <AttachMoney sx={{ fontSize: 18, color: 'success.main' }} />
-                          <Typography variant="h6" color="success.main" sx={{ fontWeight: 600 }}>
-                            {job.salary}
-                          </Typography>
-                        </Box>
-                      </Stack>
-
-                      <Divider />
-
-                      {/* Footer */}
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                          <AccessTime sx={{ fontSize: 16, color: 'text.secondary' }} />
-                          <Typography variant="caption" color="text.secondary">
-                            {job.posted}
-                          </Typography>
-                        </Box>
-                        <Typography variant="caption" color="text.secondary">
-                          {job.applicants} applicants
-                        </Typography>
-                      </Box>
-                    </Stack>
-                  </CardContent>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-
-        {/* Top Companies */}
-        <Box sx={{ mb: 8 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6 }}>
-            <Box>
-              <Typography variant="h3" sx={{ fontWeight: 700, mb: 1 }}>
-                Top Companies
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ fontSize: '1.1rem' }}>
-                Join industry leaders and innovative startups
-              </Typography>
-            </Box>
-            <Button
-              component={Link}
-              to="/companies"
-              endIcon={<ArrowForward />}
-              variant="outlined"
-              size="large"
-              sx={{ textTransform: 'none', fontWeight: 600 }}
-            >
-              View All Companies
-            </Button>
-          </Box>
-
-          <Grid container spacing={3}>
-            {topCompanies.map((company, index) => (
-              <Grid item xs={6} md={3} key={index}>
-                <Paper
-                  elevation={2}
-                  sx={{
-                    p: 4,
-                    textAlign: 'center',
-                    borderRadius: 3,
-                    transition: 'all 0.3s ease',
-                    cursor: 'pointer',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                      boxShadow: 6,
-                    },
-                  }}
-                >
-                  <Avatar
-                    sx={{
-                      width: 72,
-                      height: 72,
-                      bgcolor: company.color,
-                      fontSize: '1.8rem',
-                      fontWeight: 700,
-                      mx: 'auto',
-                      mb: 2,
-                    }}
-                  >
-                    {company.logo}
-                  </Avatar>
-                  <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
-                    {company.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    {company.employees} employees
-                  </Typography>
-                  <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
-                    {company.jobs} open positions
-                  </Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </Box>
-
-        {/* CTA Section */}
-        <Paper
-          elevation={4}
-          sx={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            color: 'white',
-            p: 8,
-            borderRadius: 4,
-            textAlign: 'center',
-          }}
-        >
-          <Typography variant="h3" sx={{ fontWeight: 700, mb: 2 }}>
-            Ready to Find Your Next Opportunity?
+  return (
+    <Container maxWidth="lg" sx={{ py: 6 }}>
+      {/* Hero Section with Advanced Styling */}
+      <Fade in={animationTrigger} timeout={1000}>
+        <Box sx={{ textAlign: 'center', mb: 8 }}>
+          <Typography 
+            variant="h2" 
+            sx={{ 
+              fontWeight: 700, 
+              mb: 2,
+              background: 'linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Find Your Dream Job with FluffyJobs
           </Typography>
-          <Typography variant="h6" sx={{ opacity: 0.9, mb: 4, maxWidth: 600, mx: 'auto' }}>
-            Join thousands of professionals who found their dream jobs through FluffyJobs
+          <Typography variant="h5" color="text.secondary" sx={{ mb: 4, maxWidth: 600, mx: 'auto' }}>
+            Connect with top companies and discover opportunities that match your skills and aspirations
           </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
             <Button
               variant="contained"
               size="large"
-              component={Link}
-              to="/register"
-              sx={{
-                bgcolor: 'white',
-                color: 'primary.main',
-                '&:hover': { bgcolor: 'grey.100' },
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 4,
+              onClick={() => navigate('/jobs')}
+              startIcon={<Work />}
+              sx={{ 
+                px: 4, 
                 py: 1.5,
+                borderRadius: 3,
+                boxShadow: 3,
+                '&:hover': {
+                  boxShadow: 6,
+                  transform: 'translateY(-2px)',
+                },
+                transition: 'all 0.3s ease',
               }}
             >
-              Get Started Today
+              Browse Jobs
             </Button>
             <Button
               variant="outlined"
               size="large"
-              component={Link}
-              to="/post-job"
-              sx={{
-                borderColor: 'white',
-                color: 'white',
-                '&:hover': { borderColor: 'white', bgcolor: 'rgba(255,255,255,0.1)' },
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 4,
+              onClick={() => navigate('/companies')}
+              startIcon={<Business />}
+              sx={{ 
+                px: 4, 
                 py: 1.5,
+                borderRadius: 3,
+                borderWidth: 2,
+                '&:hover': {
+                  borderWidth: 2,
+                  transform: 'translateY(-2px)',
+                },
+                transition: 'all 0.3s ease',
               }}
             >
-              Post a Job
+              Explore Companies
             </Button>
           </Stack>
+        </Box>
+      </Fade>
+
+      {/* Enhanced Stats Section */}
+      <Slide in={animationTrigger} direction="up" timeout={1200}>
+        <Grid container spacing={4} sx={{ mb: 8 }}>
+          {[
+            { value: `${jobs.length}+`, label: 'Active Jobs', color: 'primary.main', icon: <Work /> },
+            { value: `${companies.length}+`, label: 'Top Companies', color: 'success.main', icon: <Business /> },
+            { value: '2,500+', label: 'Job Seekers', color: 'warning.main', icon: <People /> },
+            { value: '95%', label: 'Success Rate', color: 'error.main', icon: <TrendingUp /> },
+          ].map((stat, index) => (
+            <Grid item xs={12} sm={6} md={3} key={index}>
+              <Grow in={animationTrigger} timeout={1000 + index * 200}>
+                <Paper 
+                  elevation={4} 
+                  sx={{ 
+                    p: 3, 
+                    textAlign: 'center',
+                    borderRadius: 3,
+                    background: 'linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%)',
+                    '&:hover': {
+                      elevation: 8,
+                      transform: 'translateY(-4px)',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      bgcolor: stat.color,
+                      width: 56,
+                      height: 56,
+                      mx: 'auto',
+                      mb: 2,
+                    }}
+                  >
+                    {stat.icon}
+                  </Avatar>
+                  <Typography variant="h3" sx={{ fontWeight: 700, color: stat.color, mb: 1 }}>
+                    {stat.value}
+                  </Typography>
+                  <Typography variant="h6" color="text.secondary">
+                    {stat.label}
+                  </Typography>
+                  <LinearProgress 
+                    variant="determinate" 
+                    value={85} 
+                    sx={{ mt: 2, borderRadius: 1 }}
+                  />
+                </Paper>
+              </Grow>
+            </Grid>
+          ))}
+        </Grid>
+      </Slide>
+
+      {/* Professional Featured Jobs Section */}
+      <Box sx={{ mb: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+              Featured Jobs
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Hand-picked opportunities from top companies
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            endIcon={<ArrowForward />}
+            onClick={() => navigate('/jobs')}
+            sx={{ borderRadius: 3 }}
+          >
+            View All Jobs
+          </Button>
+        </Box>
+
+        <Grid container spacing={3}>
+          {featuredJobs.map((job, index) => (
+            <Grid item xs={12} md={4} key={job.id}>
+              <Grow in={animationTrigger} timeout={1000 + index * 300}>
+                <Card
+                  elevation={3}
+                  sx={{
+                    height: '100%',
+                    cursor: 'pointer',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    '&:hover': {
+                      elevation: 8,
+                      transform: 'translateY(-8px)',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                  onClick={() => navigate(`/jobs/${job.id}`)}
+                >
+                  <CardHeader
+                    avatar={
+                      <Avatar
+                        sx={{
+                          bgcolor: 'primary.main',
+                          width: 48,
+                          height: 48,
+                          fontSize: '1.2rem',
+                          fontWeight: 'bold',
+                        }}
+                      >
+                        {getCompanyInitials(job.company)}
+                      </Avatar>
+                    }
+                    action={
+                      <IconButton
+                        onClick={(e) => handleSaveJob(job.id, e)}
+                        sx={{ color: isJobSaved(job.id) ? 'primary.main' : 'text.secondary' }}
+                      >
+                        {isJobSaved(job.id) ? <Bookmark /> : <BookmarkBorder />}
+                      </IconButton>
+                    }
+                    title={
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {job.title}
+                      </Typography>
+                    }
+                    subheader={
+                      <Typography variant="subtitle1" color="primary">
+                        {job.company}
+                      </Typography>
+                    }
+                  />
+
+                  <CardContent sx={{ pt: 0 }}>
+                    <Stack spacing={1} sx={{ mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <LocationOn fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary">
+                          {job.location}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <AttachMoney fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary">
+                          {job.salary || 'Competitive salary'}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Schedule fontSize="small" color="action" />
+                        <Typography variant="body2" color="text.secondary">
+                          Posted {job.posted_date}
+                        </Typography>
+                      </Box>
+                    </Stack>
+
+                    <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: 'wrap', gap: 1 }}>
+                      <Chip
+                        label={job.type}
+                        color={getJobTypeColor(job.type)}
+                        size="small"
+                        icon={<Verified />}
+                      />
+                      {job.remote && (
+                        <Chip label="Remote" color="success" size="small" icon={<Work />} />
+                      )}
+                      <Chip label={job.experience_level} variant="outlined" size="small" />
+                    </Stack>
+
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {job.description.substring(0, 100)}...
+                    </Typography>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {job.requirements.slice(0, 3).map((skill, skillIndex) => (
+                        <Chip
+                          key={skillIndex}
+                          label={skill}
+                          variant="outlined"
+                          size="small"
+                          sx={{ fontSize: '0.7rem' }}
+                        />
+                      ))}
+                      {job.requirements.length > 3 && (
+                        <Chip
+                          label={`+${job.requirements.length - 3}`}
+                          variant="outlined"
+                          size="small"
+                          sx={{ fontSize: '0.7rem', opacity: 0.7 }}
+                        />
+                      )}
+                    </Box>
+                  </CardContent>
+
+                  <CardActions sx={{ justifyContent: 'space-between', px: 2, pb: 2 }}>
+                    <Rating value={4.5} precision={0.5} size="small" readOnly />
+                    <Button size="small" endIcon={<Launch />}>
+                      Apply Now
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grow>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      {/* Professional Top Companies Section */}
+      <Box sx={{ mb: 8 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Box>
+            <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+              Top Companies
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              Join industry leaders and innovative startups
+            </Typography>
+          </Box>
+          <Button
+            variant="outlined"
+            endIcon={<ArrowForward />}
+            onClick={() => navigate('/companies')}
+            sx={{ borderRadius: 3 }}
+          >
+            View All Companies
+          </Button>
+        </Box>
+
+        <Grid container spacing={3}>
+          {topCompanies.map((company, index) => (
+            <Grid item xs={12} sm={6} md={3} key={company.id}>
+              <Grow in={animationTrigger} timeout={1200 + index * 200}>
+                <Card
+                  elevation={3}
+                  sx={{
+                    height: '100%',
+                    cursor: 'pointer',
+                    textAlign: 'center',
+                    borderRadius: 3,
+                    '&:hover': {
+                      elevation: 8,
+                      transform: 'translateY(-8px)',
+                    },
+                    transition: 'all 0.3s ease',
+                  }}
+                  onClick={() => navigate(`/companies/${company.id}`)}
+                >
+                  <CardContent sx={{ p: 3 }}>
+                    <Avatar
+                      sx={{
+                        bgcolor: 'primary.main',
+                        width: 80,
+                        height: 80,
+                        fontSize: '1.5rem',
+                        fontWeight: 'bold',
+                        mx: 'auto',
+                        mb: 2,
+                        boxShadow: 3,
+                      }}
+                    >
+                      {getCompanyInitials(company.name)}
+                    </Avatar>
+
+                    <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+                      {company.name}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {company.industry}
+                    </Typography>
+
+                    <Stack direction="row" spacing={2} justifyContent="center" sx={{ mb: 2 }}>
+                      <Paper elevation={1} sx={{ p: 1, borderRadius: 2 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Employees
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {company.employees}
+                        </Typography>
+                      </Paper>
+                      <Paper elevation={1} sx={{ p: 1, borderRadius: 2 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          Open Jobs
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {company.open_positions}
+                        </Typography>
+                      </Paper>
+                    </Stack>
+
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {company.description.substring(0, 80)}...
+                    </Typography>
+
+                    <Divider sx={{ my: 2 }} />
+
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, justifyContent: 'center' }}>
+                      {company.tech_stack.slice(0, 2).map((tech, techIndex) => (
+                        <Chip
+                          key={techIndex}
+                          label={tech}
+                          variant="outlined"
+                          size="small"
+                          sx={{ fontSize: '0.7rem' }}
+                        />
+                      ))}
+                      {company.tech_stack.length > 2 && (
+                        <Chip
+                          label={`+${company.tech_stack.length - 2}`}
+                          variant="outlined"
+                          size="small"
+                          sx={{ fontSize: '0.7rem', opacity: 0.7 }}
+                        />
+                      )}
+                    </Box>
+                  </CardContent>
+
+                  <CardActions sx={{ justifyContent: 'center', pb: 2 }}>
+                    <Button size="small" startIcon={<Star />}>
+                      Follow
+                    </Button>
+                    <Button size="small" startIcon={<Launch />}>
+                      View Jobs
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grow>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+
+      {/* Enhanced Call to Action */}
+      <Fade in={animationTrigger} timeout={2000}>
+        <Paper
+          elevation={6}
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            p: 6,
+            textAlign: 'center',
+            borderRadius: 4,
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background: 'url("data:image/svg+xml,%3Csvg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%23ffffff" fill-opacity="0.1"%3E%3Ccircle cx="3" cy="3" r="3"/%3E%3C/g%3E%3C/svg%3E")',
+            },
+          }}
+        >
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            <Typography variant="h4" sx={{ fontWeight: 600, mb: 2 }}>
+              Ready to Find Your Next Opportunity?
+            </Typography>
+            <Typography variant="h6" sx={{ mb: 4, opacity: 0.9 }}>
+              Join thousands of professionals who found their dream jobs through FluffyJobs
+            </Typography>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} justifyContent="center">
+              <Button
+                variant="contained"
+                size="large"
+                onClick={() => navigate('/register')}
+                startIcon={<PlayArrow />}
+                sx={{
+                  bgcolor: 'white',
+                  color: 'primary.main',
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 3,
+                  '&:hover': {
+                    bgcolor: 'grey.100',
+                    transform: 'translateY(-2px)',
+                  },
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                Get Started Today
+              </Button>
+              <Button
+                variant="outlined"
+                size="large"
+                onClick={() => navigate('/jobs')}
+                sx={{
+                  borderColor: 'white',
+                  color: 'white',
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 3,
+                  '&:hover': {
+                    borderColor: 'white',
+                    bgcolor: 'rgba(255,255,255,0.1)',
+                    transform: 'translateY(-2px)',
+                  },
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                Browse Jobs
+              </Button>
+            </Stack>
+          </Box>
         </Paper>
-      </Container>
-    </Box>
+      </Fade>
+    </Container>
   );
 };
 
