@@ -30,6 +30,14 @@ const authReducer = (state, action) => {
         isAuthenticated: true,
         loading: false,
       };
+    case 'UPDATE_PRO_STATUS':
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          is_pro: action.payload,
+        },
+      };
     default:
       return state;
   }
@@ -42,24 +50,35 @@ export const AuthProvider = ({ children }) => {
     loading: true,
   });
 
+  // Helper function to get unique user ID
+  const getUserId = (user) => {
+    if (!user) return null;
+    return user.id || user.email || 'anonymous';
+  };
+
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('access_token');
       const userData = localStorage.getItem('user_data');
-      
+
       console.log('Initializing auth - token:', token ? 'exists' : 'none');
-      console.log('Stored user data:', userData);
-      
+
       if (token) {
         try {
-          // Jeśli mamy zapisane dane użytkownika, użyj ich
           if (userData) {
             const user = JSON.parse(userData);
-            console.log('Restoring session from localStorage:', user);
+            const userId = getUserId(user);
+
+            // KLUCZOWE: Sprawdź Pro status dla konkretnego użytkownika
+            const userProKey = `pro_status_${userId}`;
+            const userProStatus = localStorage.getItem(userProKey);
+            user.is_pro = userProStatus === 'true';
+
+            console.log(`Restoring session for user ${userId}, Pro status: ${user.is_pro}`);
             dispatch({ type: 'RESTORE_SESSION', payload: user });
             return;
           }
-          
+
           // Próbuj sprawdzić token w backend
           const response = await fetch('http://localhost:8000/api/auth/user/', {
             headers: {
@@ -67,22 +86,33 @@ export const AuthProvider = ({ children }) => {
               'Content-Type': 'application/json',
             },
           });
-          
+
           if (response.ok) {
             const user = await response.json();
+            const userId = getUserId(user);
+            const userProKey = `pro_status_${userId}`;
+            const userProStatus = localStorage.getItem(userProKey);
+            user.is_pro = userProStatus === 'true';
+
             console.log('Token valid, restoring session:', user);
             localStorage.setItem('user_data', JSON.stringify(user));
             dispatch({ type: 'RESTORE_SESSION', payload: user });
           } else {
             console.log('Token invalid, but checking if fake token');
-            // Jeśli to fake token (z naszej symulacji), przywróć fake user
             if (token.startsWith('fake-')) {
               const fakeUser = {
-                id: 1,
-                email: 'user@example.com',
+                id: token.includes('google') ? 'google-user-' + Date.now() : 'email-user-' + Date.now(),
+                email: token.includes('google') ? 'user@gmail.com' : 'user@example.com',
                 name: 'Test User',
-                provider: token.includes('google') ? 'google' : 'email'
+                provider: token.includes('google') ? 'google' : 'email',
+                is_pro: false,
               };
+
+              const userId = getUserId(fakeUser);
+              const userProKey = `pro_status_${userId}`;
+              const userProStatus = localStorage.getItem(userProKey);
+              fakeUser.is_pro = userProStatus === 'true';
+
               console.log('Restoring fake user session:', fakeUser);
               localStorage.setItem('user_data', JSON.stringify(fakeUser));
               dispatch({ type: 'RESTORE_SESSION', payload: fakeUser });
@@ -95,14 +125,20 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.error('Error validating token:', error);
-          // Jeśli błąd sieci, ale mamy fake token, przywróć sesję
           if (token.startsWith('fake-')) {
             const fakeUser = {
-              id: 1,
-              email: 'user@example.com',
+              id: token.includes('google') ? 'google-user-' + Date.now() : 'email-user-' + Date.now(),
+              email: token.includes('google') ? 'user@gmail.com' : 'user@example.com',
               name: 'Test User',
-              provider: token.includes('google') ? 'google' : 'email'
+              provider: token.includes('google') ? 'google' : 'email',
+              is_pro: false,
             };
+
+            const userId = getUserId(fakeUser);
+            const userProKey = `pro_status_${userId}`;
+            const userProStatus = localStorage.getItem(userProKey);
+            fakeUser.is_pro = userProStatus === 'true';
+
             console.log('Network error, but restoring fake session:', fakeUser);
             localStorage.setItem('user_data', JSON.stringify(fakeUser));
             dispatch({ type: 'RESTORE_SESSION', payload: fakeUser });
@@ -131,10 +167,17 @@ export const AuthProvider = ({ children }) => {
         },
         body: JSON.stringify(credentials),
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         const token = data.access_token || data.token;
+
+        // Sprawdź Pro status dla tego użytkownika
+        const userId = getUserId(data.user);
+        const userProKey = `pro_status_${userId}`;
+        const userProStatus = localStorage.getItem(userProKey);
+        data.user.is_pro = userProStatus === 'true';
+
         localStorage.setItem('access_token', token);
         localStorage.setItem('user_data', JSON.stringify(data.user));
         dispatch({ type: 'LOGIN_SUCCESS', payload: data.user });
@@ -149,29 +192,75 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const googleLogin = async (tokenResponse) => {
+  const googleLogin = async (googleData) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
-      console.log('Google token response:', tokenResponse);
-      
-      const fakeUser = {
-        id: 1,
-        email: 'user@gmail.com',
-        name: 'Google User',
-        provider: 'google'
+      console.log('Google login data received:', googleData);
+
+      // Sprawdź czy mamy rzeczywiste dane użytkownika z Google
+      let userInfo = null;
+
+      if (googleData.userInfo) {
+        userInfo = googleData.userInfo;
+        console.log('Using pre-fetched user info:', userInfo);
+      } else if (googleData.access_token) {
+        console.log('Fetching user info with access token...');
+        const googleResponse = await fetch(
+          `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${googleData.access_token}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${googleData.access_token}`,
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        if (googleResponse.ok) {
+          userInfo = await googleResponse.json();
+          console.log('Fetched Google user info:', userInfo);
+        }
+      }
+
+      // Jeśli nie udało się pobrać danych, użyj fallback
+      if (!userInfo) {
+        console.warn('Could not get user info from Google, using fallback');
+        userInfo = {
+          id: 'google_' + Date.now(),
+          email: 'user@gmail.com',
+          name: 'Google User',
+          verified_email: false
+        };
+      }
+
+      // Stwórz obiekt użytkownika z rzeczywistymi danymi z Google
+      const user = {
+        id: userInfo.id || 'google_' + Date.now(),
+        email: userInfo.email,
+        name: userInfo.name,
+        first_name: userInfo.given_name,
+        last_name: userInfo.family_name,
+        picture: userInfo.picture,
+        provider: 'google',
+        verified_email: userInfo.verified_email,
+        is_pro: false, // Nowi użytkownicy domyślnie nie mają Pro
       };
-      
+
+      // Sprawdź Pro status dla Google użytkownika
+      const userId = getUserId(user);
+      const userProKey = `pro_status_${userId}`;
+      const userProStatus = localStorage.getItem(userProKey);
+      user.is_pro = userProStatus === 'true';
+
       const fakeToken = 'fake-google-token-' + Date.now();
-      
-      // KLUCZOWE: Zapisz zarówno token jak i dane użytkownika
+
       localStorage.setItem('access_token', fakeToken);
-      localStorage.setItem('user_data', JSON.stringify(fakeUser));
-      
-      dispatch({ type: 'LOGIN_SUCCESS', payload: fakeUser });
-      
-      console.log('Google login successful, token and user data saved');
-      return { user: fakeUser, token: fakeToken };
-      
+      localStorage.setItem('user_data', JSON.stringify(user));
+
+      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+
+      console.log('Google login successful with real user data:', user);
+      return { user, token: fakeToken };
+
     } catch (error) {
       console.error('Google login error:', error);
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -183,26 +272,26 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: 'SET_LOADING', payload: true });
     try {
       console.log('Attempting registration:', userData);
-      
+
       const fakeUser = {
-        id: 2,
+        id: 'register-user-' + Date.now(),
         email: userData.email,
         name: `${userData.first_name} ${userData.last_name}`,
         user_type: userData.user_type,
-        provider: 'email'
+        provider: 'email',
+        is_pro: false, // Nowi użytkownicy nie mają Pro
       };
-      
+
       const fakeToken = 'fake-register-token-' + Date.now();
-      
-      // KLUCZOWE: Zapisz zarówno token jak i dane użytkownika
+
       localStorage.setItem('access_token', fakeToken);
       localStorage.setItem('user_data', JSON.stringify(fakeUser));
-      
+
       dispatch({ type: 'LOGIN_SUCCESS', payload: fakeUser });
-      
+
       console.log('Registration successful, token and user data saved');
       return { user: fakeUser, token: fakeToken };
-      
+
     } catch (error) {
       console.error('Registration error:', error);
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -210,15 +299,32 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const upgradeToPro = async () => {
+    if (state.user) {
+      const userId = getUserId(state.user);
+      const userProKey = `pro_status_${userId}`;
+
+      // KLUCZOWE: Zapisz Pro status dla konkretnego użytkownika
+      localStorage.setItem(userProKey, 'true');
+
+      // Zaktualizuj user data
+      const updatedUser = { ...state.user, is_pro: true };
+      localStorage.setItem('user_data', JSON.stringify(updatedUser));
+
+      dispatch({ type: 'UPDATE_PRO_STATUS', payload: true });
+      console.log(`User ${userId} upgraded to Pro`);
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_data');
+    // NIE usuwaj Pro status - zostaje dla tego użytkownika
     dispatch({ type: 'LOGOUT' });
     console.log('Logged out, token and user data removed');
   };
 
   const checkAuthStatus = async () => {
-    // Ta funkcja jest już obsługiwana przez useEffect
     return state.isAuthenticated;
   };
 
@@ -230,6 +336,7 @@ export const AuthProvider = ({ children }) => {
       register,
       logout,
       checkAuthStatus,
+      upgradeToPro,
     }}>
       {children}
     </AuthContext.Provider>

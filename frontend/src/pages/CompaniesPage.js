@@ -1,408 +1,266 @@
 ﻿import React, { useState } from 'react';
 import {
-  Box,
   Container,
   Typography,
+  Box,
   Grid,
   Card,
   CardContent,
-  Avatar,
+  CardMedia,
   Button,
   TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  Paper,
   Chip,
-  IconButton,
-  InputAdornment,
-  Rating,
-  Divider,
+  Avatar,
+  CircularProgress,
 } from '@mui/material';
 import {
-  Search,
-  LocationOn,
   Business,
+  LocationOn,
   People,
-  Star,
-  Verified,
-  Language,
   Work,
-  TrendingUp,
-  FilterList,
-  Favorite,
-  FavoriteBorder,
+  Search,
 } from '@mui/icons-material';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useJobs } from '../context/JobContext';
 
 const CompaniesPage = () => {
-  const [filters, setFilters] = useState({
-    search: '',
-    location: '',
-    industry: '',
-    size: '',
+  const [searchQuery, setSearchQuery] = useState('');
+  const [industryFilter, setIndustryFilter] = useState('all');
+  const [sizeFilter, setSizeFilter] = useState('all');
+  
+  const navigate = useNavigate();
+  const { companies, loading } = useJobs();
+
+  const filteredCompanies = companies.filter(company => {
+    const matchesSearch = company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         company.industry.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         company.location.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesIndustry = industryFilter === 'all' || company.industry === industryFilter;
+    const matchesSize = sizeFilter === 'all' || company.size === sizeFilter;
+    
+    return matchesSearch && matchesIndustry && matchesSize;
   });
-  const [followedCompanies, setFollowedCompanies] = useState(new Set());
 
-  const companies = [
-    {
-      id: 1,
-      name: 'Google',
-      logo: 'G',
-      color: '#4285f4',
-      industry: 'Technology',
-      location: 'Mountain View, CA',
-      employees: '100,000+',
-      openJobs: 234,
-      rating: 4.5,
-      verified: true,
-      description: 'A multinational technology company that specializes in Internet-related services and products.',
-      website: 'google.com',
-      founded: 1998,
-      specialties: ['Search', 'AI', 'Cloud Computing', 'Mobile'],
-    },
-    {
-      id: 2,
-      name: 'Microsoft',
-      logo: 'M',
-      color: '#00a1f1',
-      industry: 'Technology',
-      location: 'Redmond, WA',
-      employees: '200,000+',
-      openJobs: 189,
-      rating: 4.4,
-      verified: true,
-      description: 'A multinational technology corporation that develops computer software, consumer electronics.',
-      website: 'microsoft.com',
-      founded: 1975,
-      specialties: ['Software', 'Cloud', 'Gaming', 'Productivity'],
-    },
-    {
-      id: 3,
-      name: 'Apple',
-      logo: 'A',
-      color: '#000000',
-      industry: 'Technology',
-      location: 'Cupertino, CA',
-      employees: '150,000+',
-      openJobs: 156,
-      rating: 4.3,
-      verified: true,
-      description: 'A multinational technology company that designs and manufactures consumer electronics.',
-      website: 'apple.com',
-      founded: 1976,
-      specialties: ['Hardware', 'Software', 'Design', 'Innovation'],
-    },
-    {
-      id: 4,
-      name: 'Amazon',
-      logo: 'A',
-      color: '#ff9900',
-      industry: 'E-commerce',
-      location: 'Seattle, WA',
-      employees: '1,500,000+',
-      openJobs: 298,
-      rating: 4.2,
-      verified: true,
-      description: 'A multinational technology company focusing on e-commerce, cloud computing, and AI.',
-      website: 'amazon.com',
-      founded: 1994,
-      specialties: ['E-commerce', 'AWS', 'Logistics', 'AI'],
-    },
-  ];
+  const industries = [...new Set(companies.map(company => company.industry))];
+  const sizes = [...new Set(companies.map(company => company.size))];
 
-  const industries = [
-    'Technology',
-    'Finance',
-    'Healthcare',
-    'E-commerce',
-    'Entertainment',
-  ];
-
-  const companySizes = [
-    '1-50',
-    '51-200',
-    '201-1000',
-    '1001-5000',
-    '5000+',
-  ];
-
-  const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+  const getCompanyInitials = (name) => {
+    return name.split(' ').map(word => word[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const toggleFollowCompany = (companyId) => {
-    setFollowedCompanies(prev => {
-      const newFollowed = new Set(prev);
-      if (newFollowed.has(companyId)) {
-        newFollowed.delete(companyId);
-      } else {
-        newFollowed.add(companyId);
-      }
-      return newFollowed;
-    });
-  };
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="50vh">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" gutterBottom sx={{ fontWeight: 'bold' }}>
-          Discover Companies
+        <Typography variant="h3" sx={{ fontWeight: 700, mb: 2 }}>
+          Explore Companies
         </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Explore {companies.length} top companies and find your perfect workplace
+        <Typography variant="h6" color="text.secondary" sx={{ mb: 4 }}>
+          Discover {companies.length} amazing companies looking for talented professionals
         </Typography>
-      </Box>
 
-      <Paper elevation={2} sx={{ p: 3, mb: 4 }}>
-        <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              placeholder="Search companies..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-            />
+        {/* Search and Filters */}
+        <Card elevation={2} sx={{ p: 3, mb: 4 }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                placeholder="Search companies..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                InputProps={{
+                  startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Industry</InputLabel>
+                <Select
+                  value={industryFilter}
+                  label="Industry"
+                  onChange={(e) => setIndustryFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All Industries</MenuItem>
+                  {industries.map(industry => (
+                    <MenuItem key={industry} value={industry}>{industry}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Company Size</InputLabel>
+                <Select
+                  value={sizeFilter}
+                  label="Company Size"
+                  onChange={(e) => setSizeFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All Sizes</MenuItem>
+                  {sizes.map(size => (
+                    <MenuItem key={size} value={size}>{size} employees</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
           </Grid>
-          <Grid item xs={12} md={3}>
-            <TextField
-              fullWidth
-              placeholder="Location"
-              value={filters.location}
-              onChange={(e) => handleFilterChange('location', e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <LocationOn />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Industry</InputLabel>
-              <Select
-                value={filters.industry}
-                label="Industry"
-                onChange={(e) => handleFilterChange('industry', e.target.value)}
-              >
-                <MenuItem value="">All Industries</MenuItem>
-                {industries.map((industry) => (
-                  <MenuItem key={industry} value={industry}>
-                    {industry}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-          <Grid item xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel>Company Size</InputLabel>
-              <Select
-                value={filters.size}
-                label="Company Size"
-                onChange={(e) => handleFilterChange('size', e.target.value)}
-              >
-                <MenuItem value="">All Sizes</MenuItem>
-                {companySizes.map((size) => (
-                  <MenuItem key={size} value={size}>
-                    {size} employees
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-        </Grid>
-      </Paper>
+        </Card>
 
-      <Grid container spacing={3}>
-        {companies.map((company) => (
-          <Grid item xs={12} md={6} lg={4} key={company.id}>
-            <Card
-              elevation={2}
-              sx={{
-                height: '100%',
-                transition: 'transform 0.2s, box-shadow 0.2s',
-                '&:hover': {
-                  transform: 'translateY(-4px)',
-                  boxShadow: 6,
-                },
-                position: 'relative',
-              }}
-            >
-              <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <Avatar
-                    sx={{
-                      width: 60,
-                      height: 60,
-                      bgcolor: company.color,
-                      color: 'white',
-                      fontSize: '1.5rem',
-                      fontWeight: 'bold',
-                      mr: 2,
-                    }}
-                  >
-                    {company.logo}
-                  </Avatar>
-                  <Box sx={{ flex: 1 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+        {/* Results Summary */}
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            {filteredCompanies.length} compan{filteredCompanies.length !== 1 ? 'ies' : 'y'} found
+            {searchQuery && ` for "${searchQuery}"`}
+          </Typography>
+        </Box>
+
+        {/* Company Grid */}
+        <Grid container spacing={3}>
+          {filteredCompanies.map((company) => (
+            <Grid item xs={12} sm={6} md={4} key={company.id}>
+              <Card
+                elevation={2}
+                sx={{
+                  height: '100%',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  '&:hover': {
+                    elevation: 4,
+                    transform: 'translateY(-4px)',
+                  },
+                }}
+                onClick={() => navigate(`/companies/${company.id}`)}
+              >
+                <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  {/* Company Header */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                    <Avatar
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        bgcolor: 'primary.main',
+                        fontSize: '1.2rem',
+                        fontWeight: 'bold',
+                        mr: 2,
+                      }}
+                    >
+                      {getCompanyInitials(company.name)}
+                    </Avatar>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
                         {company.name}
                       </Typography>
-                      {company.verified && (
-                        <Verified sx={{ fontSize: 18, color: 'primary.main' }} />
+                      <Typography variant="body2" color="text.secondary">
+                        {company.industry}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Company Info */}
+                  <Box sx={{ mb: 2, flex: 1 }}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.6 }}>
+                      {company.description}
+                    </Typography>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                      <LocationOn fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {company.location}
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 1 }}>
+                      <People fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {company.employees} employees
+                      </Typography>
+                    </Box>
+
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 2 }}>
+                      <Work fontSize="small" color="action" />
+                      <Typography variant="body2" color="text.secondary">
+                        {company.open_positions} open position{company.open_positions !== 1 ? 's' : ''}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Tech Stack */}
+                  <Box sx={{ mb: 2 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                      Tech Stack:
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {company.tech_stack.slice(0, 4).map((tech, index) => (
+                        <Chip
+                          key={index}
+                          label={tech}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontSize: '0.7rem' }}
+                        />
+                      ))}
+                      {company.tech_stack.length > 4 && (
+                        <Chip
+                          label={`+${company.tech_stack.length - 4}`}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontSize: '0.7rem', opacity: 0.7 }}
+                        />
                       )}
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                      <Rating value={company.rating} precision={0.1} size="small" readOnly />
-                      <Typography variant="body2" color="text.secondary">
-                        ({company.rating})
-                      </Typography>
-                    </Box>
                   </Box>
-                  <IconButton
-                    onClick={() => toggleFollowCompany(company.id)}
-                    sx={{ alignSelf: 'flex-start' }}
-                  >
-                    {followedCompanies.has(company.id) ? (
-                      <Favorite color="error" />
-                    ) : (
-                      <FavoriteBorder />
-                    )}
-                  </IconButton>
-                </Box>
 
-                <Box sx={{ mb: 2 }}>
-                  <Chip
-                    label={company.industry}
-                    size="small"
-                    color="primary"
+                  {/* View Company Button */}
+                  <Button
                     variant="outlined"
-                    sx={{ mb: 1 }}
-                  />
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                    {company.description}
-                  </Typography>
-                </Box>
+                    fullWidth
+                    startIcon={<Business />}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/companies/${company.id}`);
+                    }}
+                  >
+                    View Company
+                  </Button>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
 
-                <Box sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <LocationOn sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {company.location}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <People sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {company.employees} employees
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                    <Language sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {company.website}
-                    </Typography>
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Business sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
-                    <Typography variant="body2" color="text.secondary">
-                      Founded {company.founded}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                    Specialties:
-                  </Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                    {company.specialties.slice(0, 3).map((specialty, index) => (
-                      <Chip
-                        key={index}
-                        label={specialty}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: '0.75rem' }}
-                      />
-                    ))}
-                    {company.specialties.length > 3 && (
-                      <Chip
-                        label={'More...'}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: '0.75rem' }}
-                      />
-                    )}
-                  </Box>
-                </Box>
-
-                <Divider sx={{ my: 2 }} />
-
-                <Box sx={{ mt: 'auto' }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Work sx={{ fontSize: 16, mr: 0.5, color: 'primary.main' }} />
-                      <Typography variant="body2" color="primary.main" sx={{ fontWeight: 600 }}>
-                        {company.openJobs} open jobs
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      variant="contained"
-                      fullWidth
-                      component={Link}
-                      to={'/companies/' + company.id}
-                      sx={{
-                        textTransform: 'none',
-                        fontWeight: 600,
-                      }}
-                    >
-                      View Company
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      fullWidth
-                      component={Link}
-                      to={'/jobs?company=' + company.name}
-                      sx={{
-                        textTransform: 'none',
-                        fontWeight: 600,
-                      }}
-                    >
-                      View Jobs
-                    </Button>
-                  </Box>
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      <Box sx={{ textAlign: 'center', mt: 4 }}>
-        <Button
-          variant="outlined"
-          size="large"
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            px: 4,
-          }}
-        >
-          Load More Companies
-        </Button>
+        {/* No Results */}
+        {filteredCompanies.length === 0 && (
+          <Box sx={{ textAlign: 'center', py: 8 }}>
+            <Typography variant="h5" sx={{ mb: 2 }}>
+              No companies found
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+              Try adjusting your search criteria or filters
+            </Typography>
+            <Button
+              variant="contained"
+              onClick={() => {
+                setSearchQuery('');
+                setIndustryFilter('all');
+                setSizeFilter('all');
+              }}
+            >
+              Clear All Filters
+            </Button>
+          </Box>
+        )}
       </Box>
     </Container>
   );

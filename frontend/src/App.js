@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AuthProvider } from './context/AuthContext';
 import { JobProvider } from './context/JobContext';
+
 import Layout from './components/Layout/Layout';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import PublicRoute from './components/auth/PublicRoute';
@@ -20,6 +21,8 @@ import PostJobPage from './pages/PostJobPage';
 import PaymentPage from './pages/PaymentPage';
 import DashboardPage from './pages/DashboardPage';
 import SavedJobsPage from './pages/SavedJobsPage';
+import UpgradePage from './pages/UpgradePage';
+import UpgradeSuccessPage from './pages/UpgradeSuccessPage';
 
 const theme = createTheme({
   palette: {
@@ -60,6 +63,7 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
+      <JobProvider>
           <JobProvider>
             <Router>
               <Routes>
@@ -74,6 +78,8 @@ function App() {
                   <Route path="/jobs/:id" element={<JobDetailPage />} />
                   <Route path="/companies" element={<CompaniesPage />} />
                   <Route path="/companies/:id" element={<CompanyDetailPage />} />
+                  <Route path="/upgrade" element={<UpgradePage />} />
+                  <Route path="/upgrade/success" element={<UpgradeSuccessPage />} />
 
                   <Route element={<ProtectedRoute />}>
                     <Route path="/dashboard" element={<DashboardPage />} />
@@ -88,10 +94,14 @@ function App() {
               </Routes>
             </Router>
           </JobProvider>
-        </AuthProvider>
+        </JobProvider>
+    </AuthProvider>
       </ThemeProvider>
     </GoogleOAuthProvider>
   );
 }
 
 export default App;
+
+
+

@@ -34,10 +34,10 @@ const LoginPage = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    
+
     try {
       await login(credentials);
-      // Nie trzeba ręcznie przekierowywać - useEffect to zrobi
+      // useEffect automatycznie przekieruje po zmianie isAuthenticated
     } catch (err) {
       setError('Invalid email or password');
     } finally {
@@ -45,19 +45,69 @@ const LoginPage = () => {
     }
   };
 
+  // NOWA FUNKCJA: Pobieranie prawdziwych danych użytkownika z Google API
+  const fetchGoogleUserInfo = async (accessToken) => {
+    try {
+      console.log('Fetching Google user info with access token...');
+      const response = await fetch(
+        `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json'
+          }
+        }
+      );
+
+      if (response.ok) {
+        const userInfo = await response.json();
+        console.log('Successfully fetched Google user info:', userInfo);
+        return userInfo;
+      } else {
+        console.error('Failed to fetch user info, status:', response.status);
+        throw new Error('Failed to fetch user info from Google');
+      }
+    } catch (error) {
+      console.error('Error fetching Google user info:', error);
+      throw error;
+    }
+  };
+
   const googleLoginHandler = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      console.log('Google login success:', tokenResponse);
+      console.log('Google OAuth success, token response:', tokenResponse);
       setLoading(true);
       setError('');
-      
+
       try {
-        await googleLogin(tokenResponse);
-        console.log('Backend login successful');
-        // Nie trzeba ręcznie przekierowywać - useEffect to zrobi gdy isAuthenticated się zmieni
+        // NOWE: Pobierz rzeczywiste dane użytkownika z Google API
+        const userInfo = await fetchGoogleUserInfo(tokenResponse.access_token);
+
+        // NOWE: Stwórz obiekt z pełnymi danymi użytkownika
+        const googleUserData = {
+          access_token: tokenResponse.access_token,
+          userInfo: {
+            id: userInfo.id,
+            email: userInfo.email,
+            name: userInfo.name,
+            given_name: userInfo.given_name,
+            family_name: userInfo.family_name,
+            picture: userInfo.picture,
+            verified_email: userInfo.verified_email,
+            locale: userInfo.locale
+          }
+        };
+
+        console.log('Passing complete user data to AuthContext:', googleUserData);
+
+        // Przekaż rzeczywiste dane do AuthContext
+        await googleLogin(googleUserData);
+        console.log('Google login processed successfully');
+        // useEffect automatycznie przekieruje gdy isAuthenticated się zmieni
+        
       } catch (err) {
-        console.error('Google login failed:', err);
-        setError('Google login failed. Please try again.');
+        console.error('Google login processing failed:', err);
+        setError(`Google login failed: ${err.message}`);
       } finally {
         setLoading(false);
       }
@@ -65,8 +115,10 @@ const LoginPage = () => {
     onError: (error) => {
       console.error('Google OAuth error:', error);
       setError('Google login was cancelled or failed');
+      setLoading(false);
     },
-    flow: 'auth-code',
+    scope: 'openid email profile', // NOWE: Dodane scope dla pełnych danych
+    flow: 'implicit', // NOWE: Zmienione na implicit żeby otrzymać access_token
   });
 
   return (
