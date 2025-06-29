@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import {
   Container,
   Typography,
@@ -25,6 +25,25 @@ import { useAuth } from '../context/AuthContext';
 const DashboardPage = () => {
   const { user } = useAuth();
 
+  // Inteligentne pobieranie nazwy użytkownika
+  const getUserDisplayName = () => {
+    if (!user) return 'User';
+    
+    // Sprawdź różne możliwe pola nazwy
+    if (user.displayName) return user.displayName;
+    if (user.name) return user.name;
+    if (user.full_name) return user.full_name;
+    if (user.first_name && user.last_name) {
+      return user.first_name + ' ' + user.last_name;
+    }
+    if (user.first_name) return user.first_name;
+    if (user.last_name) return user.last_name;
+    if (user.username) return user.username;
+    if (user.email) return user.email.split('@')[0];
+    
+    return 'User';
+  };
+
   const stats = [
     { icon: <Work />, value: '12', label: 'Applications Sent', color: '#1976d2' },
     { icon: <Bookmark />, value: '8', label: 'Saved Jobs', color: '#388e3c' },
@@ -43,7 +62,7 @@ const DashboardPage = () => {
       {/* Welcome Section */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" gutterBottom sx={{ fontWeight: 700 }}>
-          Welcome back, {user?.name || user?.username || 'User'}!
+          Welcome back, {getUserDisplayName()}!
         </Typography>
         <Typography variant="h6" color="text.secondary">
           Here's what's happening with your job search

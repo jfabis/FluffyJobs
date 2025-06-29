@@ -50,10 +50,25 @@ export const AuthProvider = ({ children }) => {
     loading: true,
   });
 
-  // Helper function to get unique user ID
   const getUserId = (user) => {
     if (!user) return null;
     return user.id || user.email || 'anonymous';
+  };
+
+  const getUserDisplayName = (user) => {
+    if (!user) return 'User';
+    
+    // Sprawdź różne możliwe pola nazwy
+    if (user.name) return user.name;
+    if (user.full_name) return user.full_name;
+    if (user.first_name && user.last_name) {
+      return user.first_name + ' ' + user.last_name;
+    }
+    if (user.first_name) return user.first_name;
+    if (user.last_name) return user.last_name;
+    if (user.email) return user.email.split('@')[0];
+    
+    return 'User';
   };
 
   useEffect(() => {
@@ -61,92 +76,31 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('access_token');
       const userData = localStorage.getItem('user_data');
 
-      console.log('Initializing auth - token:', token ? 'exists' : 'none');
+      console.log('Initializing auth - token exists:', !!token);
 
       if (token) {
         try {
           if (userData) {
             const user = JSON.parse(userData);
             const userId = getUserId(user);
-
-            // KLUCZOWE: Sprawdź Pro status dla konkretnego użytkownika
-            const userProKey = `pro_status_${userId}`;
+            const userProKey = 'pro_status_' + userId;
             const userProStatus = localStorage.getItem(userProKey);
             user.is_pro = userProStatus === 'true';
+            
+            // Dodaj display name do user object
+            user.displayName = getUserDisplayName(user);
 
-            console.log(`Restoring session for user ${userId}, Pro status: ${user.is_pro}`);
+            console.log('Restoring session for user:', getUserDisplayName(user));
             dispatch({ type: 'RESTORE_SESSION', payload: user });
             return;
           }
 
-          // Próbuj sprawdzić token w backend
-          const response = await fetch('http://localhost:8000/api/auth/user/', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-
-          if (response.ok) {
-            const user = await response.json();
-            const userId = getUserId(user);
-            const userProKey = `pro_status_${userId}`;
-            const userProStatus = localStorage.getItem(userProKey);
-            user.is_pro = userProStatus === 'true';
-
-            console.log('Token valid, restoring session:', user);
-            localStorage.setItem('user_data', JSON.stringify(user));
-            dispatch({ type: 'RESTORE_SESSION', payload: user });
-          } else {
-            console.log('Token invalid, but checking if fake token');
-            if (token.startsWith('fake-')) {
-              const fakeUser = {
-                id: token.includes('google') ? 'google-user-' + Date.now() : 'email-user-' + Date.now(),
-                email: token.includes('google') ? 'user@gmail.com' : 'user@example.com',
-                name: 'Test User',
-                provider: token.includes('google') ? 'google' : 'email',
-                is_pro: false,
-              };
-
-              const userId = getUserId(fakeUser);
-              const userProKey = `pro_status_${userId}`;
-              const userProStatus = localStorage.getItem(userProKey);
-              fakeUser.is_pro = userProStatus === 'true';
-
-              console.log('Restoring fake user session:', fakeUser);
-              localStorage.setItem('user_data', JSON.stringify(fakeUser));
-              dispatch({ type: 'RESTORE_SESSION', payload: fakeUser });
-            } else {
-              console.log('Removing invalid token');
-              localStorage.removeItem('access_token');
-              localStorage.removeItem('user_data');
-              dispatch({ type: 'SET_LOADING', payload: false });
-            }
-          }
+          dispatch({ type: 'SET_LOADING', payload: false });
         } catch (error) {
           console.error('Error validating token:', error);
-          if (token.startsWith('fake-')) {
-            const fakeUser = {
-              id: token.includes('google') ? 'google-user-' + Date.now() : 'email-user-' + Date.now(),
-              email: token.includes('google') ? 'user@gmail.com' : 'user@example.com',
-              name: 'Test User',
-              provider: token.includes('google') ? 'google' : 'email',
-              is_pro: false,
-            };
-
-            const userId = getUserId(fakeUser);
-            const userProKey = `pro_status_${userId}`;
-            const userProStatus = localStorage.getItem(userProKey);
-            fakeUser.is_pro = userProStatus === 'true';
-
-            console.log('Network error, but restoring fake session:', fakeUser);
-            localStorage.setItem('user_data', JSON.stringify(fakeUser));
-            dispatch({ type: 'RESTORE_SESSION', payload: fakeUser });
-          } else {
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('user_data');
-            dispatch({ type: 'SET_LOADING', payload: false });
-          }
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('user_data');
+          dispatch({ type: 'SET_LOADING', payload: false });
         }
       } else {
         console.log('No token found, user not authenticated');
@@ -165,104 +119,34 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(credentials),
+        body: JSON.stringify({
+          email: credentials.email,
+          password: credentials.password
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        const token = data.access_token || data.token;
+        const token = data.access || data.access_token || data.token;
 
-        // Sprawdź Pro status dla tego użytkownika
         const userId = getUserId(data.user);
-        const userProKey = `pro_status_${userId}`;
+        const userProKey = 'pro_status_' + userId;
         const userProStatus = localStorage.getItem(userProKey);
         data.user.is_pro = userProStatus === 'true';
+        
+        // Dodaj display name do user object
+        data.user.displayName = getUserDisplayName(data.user);
 
         localStorage.setItem('access_token', token);
         localStorage.setItem('user_data', JSON.stringify(data.user));
         dispatch({ type: 'LOGIN_SUCCESS', payload: data.user });
-        console.log('Login successful, token and user data saved');
+        console.log('Login successful for:', getUserDisplayName(data.user));
         return data;
       } else {
-        throw new Error('Login failed');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
       }
     } catch (error) {
-      dispatch({ type: 'SET_LOADING', payload: false });
-      throw error;
-    }
-  };
-
-  const googleLogin = async (googleData) => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      console.log('Google login data received:', googleData);
-
-      // Sprawdź czy mamy rzeczywiste dane użytkownika z Google
-      let userInfo = null;
-
-      if (googleData.userInfo) {
-        userInfo = googleData.userInfo;
-        console.log('Using pre-fetched user info:', userInfo);
-      } else if (googleData.access_token) {
-        console.log('Fetching user info with access token...');
-        const googleResponse = await fetch(
-          `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${googleData.access_token}`,
-          {
-            headers: {
-              'Authorization': `Bearer ${googleData.access_token}`,
-              'Accept': 'application/json'
-            }
-          }
-        );
-
-        if (googleResponse.ok) {
-          userInfo = await googleResponse.json();
-          console.log('Fetched Google user info:', userInfo);
-        }
-      }
-
-      // Jeśli nie udało się pobrać danych, użyj fallback
-      if (!userInfo) {
-        console.warn('Could not get user info from Google, using fallback');
-        userInfo = {
-          id: 'google_' + Date.now(),
-          email: 'user@gmail.com',
-          name: 'Google User',
-          verified_email: false
-        };
-      }
-
-      // Stwórz obiekt użytkownika z rzeczywistymi danymi z Google
-      const user = {
-        id: userInfo.id || 'google_' + Date.now(),
-        email: userInfo.email,
-        name: userInfo.name,
-        first_name: userInfo.given_name,
-        last_name: userInfo.family_name,
-        picture: userInfo.picture,
-        provider: 'google',
-        verified_email: userInfo.verified_email,
-        is_pro: false, // Nowi użytkownicy domyślnie nie mają Pro
-      };
-
-      // Sprawdź Pro status dla Google użytkownika
-      const userId = getUserId(user);
-      const userProKey = `pro_status_${userId}`;
-      const userProStatus = localStorage.getItem(userProKey);
-      user.is_pro = userProStatus === 'true';
-
-      const fakeToken = 'fake-google-token-' + Date.now();
-
-      localStorage.setItem('access_token', fakeToken);
-      localStorage.setItem('user_data', JSON.stringify(user));
-
-      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-
-      console.log('Google login successful with real user data:', user);
-      return { user, token: fakeToken };
-
-    } catch (error) {
-      console.error('Google login error:', error);
       dispatch({ type: 'SET_LOADING', payload: false });
       throw error;
     }
@@ -273,27 +157,113 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('Attempting registration:', userData);
 
-      const fakeUser = {
-        id: 'register-user-' + Date.now(),
-        email: userData.email,
-        name: `${userData.first_name} ${userData.last_name}`,
-        user_type: userData.user_type,
-        provider: 'email',
-        is_pro: false, // Nowi użytkownicy nie mają Pro
-      };
+      const response = await fetch('http://localhost:8000/api/users/register/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: userData.email,
+          password: userData.password,
+          password_confirm: userData.password,
+          first_name: userData.firstName || userData.first_name || '',
+          last_name: userData.lastName || userData.last_name || '',
+          user_type: userData.user_type || 'job_seeker'
+        }),
+      });
 
-      const fakeToken = 'fake-register-token-' + Date.now();
+      if (response.ok) {
+        const data = await response.json();
+        const token = data.access || data.access_token || data.token;
 
-      localStorage.setItem('access_token', fakeToken);
-      localStorage.setItem('user_data', JSON.stringify(fakeUser));
+        data.user.is_pro = false;
+        
+        // Dodaj display name do user object
+        data.user.displayName = getUserDisplayName(data.user);
 
-      dispatch({ type: 'LOGIN_SUCCESS', payload: fakeUser });
+        localStorage.setItem('access_token', token);
+        localStorage.setItem('user_data', JSON.stringify(data.user));
+        dispatch({ type: 'LOGIN_SUCCESS', payload: data.user });
 
-      console.log('Registration successful, token and user data saved');
-      return { user: fakeUser, token: fakeToken };
-
+        console.log('Registration successful for:', getUserDisplayName(data.user));
+        return { user: data.user, token: token };
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Registration failed');
+      }
     } catch (error) {
       console.error('Registration error:', error);
+      dispatch({ type: 'SET_LOADING', payload: false });
+      throw error;
+    }
+  };
+
+  const googleLogin = async (googleData) => {
+    dispatch({ type: 'SET_LOADING', payload: true });
+    try {
+      console.log('Google login data received:', googleData);
+
+      let userInfo = null;
+
+      if (googleData.userInfo) {
+        userInfo = googleData.userInfo;
+      } else if (googleData.access_token) {
+        const googleResponse = await fetch(
+          'https://www.googleapis.com/oauth2/v2/userinfo?access_token=' + googleData.access_token,
+          {
+            headers: {
+              'Authorization': 'Bearer ' + googleData.access_token,
+              'Accept': 'application/json'
+            }
+          }
+        );
+
+        if (googleResponse.ok) {
+          userInfo = await googleResponse.json();
+        }
+      }
+
+      if (!userInfo) {
+        userInfo = {
+          id: 'google_' + Date.now(),
+          email: 'user@gmail.com',
+          name: 'Google User',
+          verified_email: false
+        };
+      }
+
+      const user = {
+        id: userInfo.id || 'google_' + Date.now(),
+        email: userInfo.email,
+        name: userInfo.name,
+        first_name: userInfo.given_name,
+        last_name: userInfo.family_name,
+        picture: userInfo.picture,
+        provider: 'google',
+        verified_email: userInfo.verified_email,
+        is_pro: false,
+      };
+
+      const userId = getUserId(user);
+      const userProKey = 'pro_status_' + userId;
+      const userProStatus = localStorage.getItem(userProKey);
+      user.is_pro = userProStatus === 'true';
+      
+      // Dodaj display name do user object
+      user.displayName = getUserDisplayName(user);
+
+      const fakeToken = 'fake-google-token-' + Date.now();
+
+      localStorage.setItem('access_token', fakeToken);
+      localStorage.setItem('user_data', JSON.stringify(user));
+
+      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
+
+      console.log('Google login successful for:', getUserDisplayName(user));
+      return { user, token: fakeToken };
+
+    } catch (error) {
+      console.error('Google login error:', error);
       dispatch({ type: 'SET_LOADING', payload: false });
       throw error;
     }
@@ -302,30 +272,32 @@ export const AuthProvider = ({ children }) => {
   const upgradeToPro = async () => {
     if (state.user) {
       const userId = getUserId(state.user);
-      const userProKey = `pro_status_${userId}`;
+      const userProKey = 'pro_status_' + userId;
 
-      // KLUCZOWE: Zapisz Pro status dla konkretnego użytkownika
       localStorage.setItem(userProKey, 'true');
 
-      // Zaktualizuj user data
       const updatedUser = { ...state.user, is_pro: true };
       localStorage.setItem('user_data', JSON.stringify(updatedUser));
 
       dispatch({ type: 'UPDATE_PRO_STATUS', payload: true });
-      console.log(`User ${userId} upgraded to Pro`);
+      console.log('User upgraded to Pro:', getUserDisplayName(updatedUser));
     }
   };
 
   const logout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('user_data');
-    // NIE usuwaj Pro status - zostaje dla tego użytkownika
     dispatch({ type: 'LOGOUT' });
-    console.log('Logged out, token and user data removed');
+    console.log('Logged out');
   };
 
   const checkAuthStatus = async () => {
     return state.isAuthenticated;
+  };
+
+  // Dodaj helper function do value
+  const getDisplayName = () => {
+    return getUserDisplayName(state.user);
   };
 
   return (
@@ -337,6 +309,8 @@ export const AuthProvider = ({ children }) => {
       logout,
       checkAuthStatus,
       upgradeToPro,
+      getDisplayName,
+      getUserDisplayName,
     }}>
       {children}
     </AuthContext.Provider>
