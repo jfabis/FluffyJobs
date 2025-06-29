@@ -18,7 +18,7 @@ import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PostJobPage from './pages/PostJobPage';
-import PaymentPage from './pages/PaymentPage';
+
 import DashboardPage from './pages/DashboardPage';
 import SavedJobsPage from './pages/SavedJobsPage';
 import UpgradePage from './pages/UpgradePage';
@@ -86,7 +86,6 @@ function App() {
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/saved-jobs" element={<SavedJobsPage />} />
                     <Route path="/post-job" element={<PostJobPage />} />
-                    <Route path="/payment" element={<PaymentPage />} />
                   </Route>
                 </Route>
 
