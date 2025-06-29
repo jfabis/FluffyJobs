@@ -17,7 +17,8 @@ class EmailLoginSerializer(serializers.Serializer):
                 user = User.objects.get(email=email)
                 if user.check_password(password):
                     if not user.is_active:
-                        raise serializers.ValidationError('Konto użytkownika jest nieaktywne.')
+                        raise serializers.ValidationError("Konto uzytkownika jest nieaktywne.")
+                    
                     refresh = RefreshToken.for_user(user)
                     return {
                         'refresh': str(refresh),
@@ -30,8 +31,8 @@ class EmailLoginSerializer(serializers.Serializer):
                         }
                     }
                 else:
-                    raise serializers.ValidationError('Nieprawidłowy email lub hasło.')
+                    raise serializers.ValidationError("Nieprawidlowy email lub haslo.")
             except User.DoesNotExist:
-                raise serializers.ValidationError('Nieprawidłowy email lub hasło.')
+                raise serializers.ValidationError("Nieprawidlowy email lub haslo.")
         else:
-            raise serializers.ValidationError('Email i hasło są wymagane.')
+            raise serializers.ValidationError("Email i haslo sa wymagane.")

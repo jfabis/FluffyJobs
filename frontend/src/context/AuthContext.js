@@ -1,315 +1,169 @@
-﻿import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
-const authReducer = (state, action) => {
-  switch (action.type) {
-    case 'LOGIN_SUCCESS':
-      return {
-        ...state,
-        user: action.payload,
-        isAuthenticated: true,
-        loading: false,
-      };
-    case 'LOGOUT':
-      return {
-        ...state,
-        user: null,
-        isAuthenticated: false,
-        loading: false,
-      };
-    case 'SET_LOADING':
-      return {
-        ...state,
-        loading: action.payload,
-      };
-    case 'RESTORE_SESSION':
-      return {
-        ...state,
-        user: action.payload,
-        isAuthenticated: true,
-        loading: false,
-      };
-    case 'UPDATE_PRO_STATUS':
-      return {
-        ...state,
-        user: {
-          ...state.user,
-          is_pro: action.payload,
-        },
-      };
-    default:
-      return state;
-  }
-};
-
 export const AuthProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(authReducer, {
-    user: null,
-    isAuthenticated: false,
-    loading: true,
-  });
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const getUserId = (user) => {
-    if (!user) return null;
-    return user.id || user.email || 'anonymous';
-  };
-
-  const getUserDisplayName = (user) => {
-    if (!user) return 'User';
-    
-    // Sprawdź różne możliwe pola nazwy
-    if (user.name) return user.name;
-    if (user.full_name) return user.full_name;
-    if (user.first_name && user.last_name) {
-      return user.first_name + ' ' + user.last_name;
-    }
-    if (user.first_name) return user.first_name;
-    if (user.last_name) return user.last_name;
-    if (user.email) return user.email.split('@')[0];
-    
-    return 'User';
-  };
-
+  // Sprawd� sessionStorage przy starcie
   useEffect(() => {
-    const initializeAuth = async () => {
-      const token = localStorage.getItem('access_token');
-      const userData = localStorage.getItem('user_data');
-
-      console.log('Initializing auth - token exists:', !!token);
-
-      if (token) {
-        try {
-          if (userData) {
-            const user = JSON.parse(userData);
-            const userId = getUserId(user);
-            const userProKey = 'pro_status_' + userId;
-            const userProStatus = localStorage.getItem(userProKey);
-            user.is_pro = userProStatus === 'true';
-            
-            // Dodaj display name do user object
-            user.displayName = getUserDisplayName(user);
-
-            console.log('Restoring session for user:', getUserDisplayName(user));
-            dispatch({ type: 'RESTORE_SESSION', payload: user });
-            return;
-          }
-
-          dispatch({ type: 'SET_LOADING', payload: false });
-        } catch (error) {
-          console.error('Error validating token:', error);
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('user_data');
-          dispatch({ type: 'SET_LOADING', payload: false });
+    const checkAuth = () => {
+      try {
+        const savedUser = sessionStorage.getItem('user');
+        const savedToken = sessionStorage.getItem('token');
+        
+        console.log('Checking auth on startup:', { savedUser: !!savedUser, savedToken: !!savedToken });
+        
+        if (savedUser && savedToken) {
+          const userData = JSON.parse(savedUser);
+          setUser(userData);
+          setIsAuthenticated(true);
+          console.log('User restored from sessionStorage:', userData.email);
         }
-      } else {
-        console.log('No token found, user not authenticated');
-        dispatch({ type: 'SET_LOADING', payload: false });
+      } catch (error) {
+        console.error('Error restoring auth:', error);
+        sessionStorage.clear();
+      } finally {
+        setLoading(false);
       }
     };
 
-    initializeAuth();
+    checkAuth();
   }, []);
 
   const login = async (credentials) => {
-    dispatch({ type: 'SET_LOADING', payload: true });
+    setLoading(true);
     try {
       const response = await fetch('http://localhost:8000/api/auth/login/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: credentials.email,
-          password: credentials.password
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials),
       });
 
       if (response.ok) {
         const data = await response.json();
-        const token = data.access || data.access_token || data.token;
-
-        const userId = getUserId(data.user);
-        const userProKey = 'pro_status_' + userId;
-        const userProStatus = localStorage.getItem(userProKey);
-        data.user.is_pro = userProStatus === 'true';
+        const token = data.access || data.access_token;
         
-        // Dodaj display name do user object
-        data.user.displayName = getUserDisplayName(data.user);
-
-        localStorage.setItem('access_token', token);
-        localStorage.setItem('user_data', JSON.stringify(data.user));
-        dispatch({ type: 'LOGIN_SUCCESS', payload: data.user });
-        console.log('Login successful for:', getUserDisplayName(data.user));
+        // Zapisz do sessionStorage
+        sessionStorage.setItem('user', JSON.stringify(data.user));
+        sessionStorage.setItem('token', token);
+        sessionStorage.setItem('refresh_token', data.refresh || '');
+        
+        setUser(data.user);
+        setIsAuthenticated(true);
+        
+        console.log('Login successful, saved to sessionStorage');
         return data;
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        throw new Error('Login failed');
       }
     } catch (error) {
-      dispatch({ type: 'SET_LOADING', payload: false });
+      console.error('Login error:', error);
       throw error;
-    }
-  };
-
-  const register = async (userData) => {
-    dispatch({ type: 'SET_LOADING', payload: true });
-    try {
-      console.log('Attempting registration:', userData);
-
-      const response = await fetch('http://localhost:8000/api/users/register/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: userData.email,
-          password: userData.password,
-          password_confirm: userData.password,
-          first_name: userData.firstName || userData.first_name || '',
-          last_name: userData.lastName || userData.last_name || '',
-          user_type: userData.user_type || 'job_seeker'
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        const token = data.access || data.access_token || data.token;
-
-        data.user.is_pro = false;
-        
-        // Dodaj display name do user object
-        data.user.displayName = getUserDisplayName(data.user);
-
-        localStorage.setItem('access_token', token);
-        localStorage.setItem('user_data', JSON.stringify(data.user));
-        dispatch({ type: 'LOGIN_SUCCESS', payload: data.user });
-
-        console.log('Registration successful for:', getUserDisplayName(data.user));
-        return { user: data.user, token: token };
-      } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
-      dispatch({ type: 'SET_LOADING', payload: false });
-      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const googleLogin = async (googleData) => {
-    dispatch({ type: 'SET_LOADING', payload: true });
+    setLoading(true);
     try {
-      console.log('Google login data received:', googleData);
+      const response = await fetch('http://localhost:8000/api/auth/google/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          access_token: googleData.access_token || googleData.accessToken
+        }),
+      });
 
-      let userInfo = null;
-
-      if (googleData.userInfo) {
-        userInfo = googleData.userInfo;
-      } else if (googleData.access_token) {
-        const googleResponse = await fetch(
-          'https://www.googleapis.com/oauth2/v2/userinfo?access_token=' + googleData.access_token,
-          {
-            headers: {
-              'Authorization': 'Bearer ' + googleData.access_token,
-              'Accept': 'application/json'
-            }
-          }
-        );
-
-        if (googleResponse.ok) {
-          userInfo = await googleResponse.json();
-        }
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Zapisz do sessionStorage
+        sessionStorage.setItem('user', JSON.stringify(data.user));
+        sessionStorage.setItem('token', data.access_token);
+        sessionStorage.setItem('refresh_token', data.refresh_token || '');
+        
+        setUser(data.user);
+        setIsAuthenticated(true);
+        
+        console.log('Google login successful, saved to sessionStorage');
+        return data;
+      } else {
+        throw new Error('Google login failed');
       }
-
-      if (!userInfo) {
-        userInfo = {
-          id: 'google_' + Date.now(),
-          email: 'user@gmail.com',
-          name: 'Google User',
-          verified_email: false
-        };
-      }
-
-      const user = {
-        id: userInfo.id || 'google_' + Date.now(),
-        email: userInfo.email,
-        name: userInfo.name,
-        first_name: userInfo.given_name,
-        last_name: userInfo.family_name,
-        picture: userInfo.picture,
-        provider: 'google',
-        verified_email: userInfo.verified_email,
-        is_pro: false,
-      };
-
-      const userId = getUserId(user);
-      const userProKey = 'pro_status_' + userId;
-      const userProStatus = localStorage.getItem(userProKey);
-      user.is_pro = userProStatus === 'true';
-      
-      // Dodaj display name do user object
-      user.displayName = getUserDisplayName(user);
-
-      const fakeToken = 'fake-google-token-' + Date.now();
-
-      localStorage.setItem('access_token', fakeToken);
-      localStorage.setItem('user_data', JSON.stringify(user));
-
-      dispatch({ type: 'LOGIN_SUCCESS', payload: user });
-
-      console.log('Google login successful for:', getUserDisplayName(user));
-      return { user, token: fakeToken };
-
     } catch (error) {
       console.error('Google login error:', error);
-      dispatch({ type: 'SET_LOADING', payload: false });
       throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
-  const upgradeToPro = async () => {
-    if (state.user) {
-      const userId = getUserId(state.user);
-      const userProKey = 'pro_status_' + userId;
+  const register = async (userData) => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:8000/api/users/register/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userData.email,
+          password: userData.password,
+          password_confirm: userData.password,
+          first_name: userData.firstName || '',
+          last_name: userData.lastName || '',
+          user_type: userData.usertype || 'jobseeker',
+        }),
+      });
 
-      localStorage.setItem(userProKey, 'true');
-
-      const updatedUser = { ...state.user, is_pro: true };
-      localStorage.setItem('user_data', JSON.stringify(updatedUser));
-
-      dispatch({ type: 'UPDATE_PRO_STATUS', payload: true });
-      console.log('User upgraded to Pro:', getUserDisplayName(updatedUser));
+      if (response.ok) {
+        const data = await response.json();
+        const token = data.access || data.access_token;
+        
+        // Zapisz do sessionStorage
+        sessionStorage.setItem('user', JSON.stringify(data.user));
+        sessionStorage.setItem('token', token);
+        sessionStorage.setItem('refresh_token', data.refresh || '');
+        
+        setUser(data.user);
+        setIsAuthenticated(true);
+        
+        console.log('Registration successful, saved to sessionStorage');
+        return data;
+      } else {
+        throw new Error('Registration failed');
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('user_data');
-    dispatch({ type: 'LOGOUT' });
-    console.log('Logged out');
+    sessionStorage.clear();
+    setUser(null);
+    setIsAuthenticated(false);
+    console.log('User logged out, sessionStorage cleared');
   };
 
-  const checkAuthStatus = async () => {
-    return state.isAuthenticated;
-  };
-
-  // Dodaj helper function do value
-  const getDisplayName = () => {
-    return getUserDisplayName(state.user);
+  const getUserDisplayName = (userData = user) => {
+    if (!userData) return 'User';
+    return userData.name || userData.first_name || userData.email?.split('@')[0] || 'User';
   };
 
   return (
     <AuthContext.Provider value={{
-      ...state,
+      user,
+      isAuthenticated,
+      loading,
       login,
       googleLogin,
       register,
       logout,
-      checkAuthStatus,
-      upgradeToPro,
-      getDisplayName,
       getUserDisplayName,
     }}>
       {children}
